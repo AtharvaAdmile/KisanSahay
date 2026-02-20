@@ -1,0 +1,59 @@
+{
+    "onboarding": {
+        "step": "Step {{current}} of {{total}}",
+        "next": "Next",
+        "back": "Back",
+        "submit": "Submit"
+    },
+    "language_screen": {
+        "title": "Choose Your Language",
+        "subtitle": "Select your preferred language",
+        "location_title": "Your Location",
+        "state": "State",
+        "district": "District",
+        "taluka": "Taluka",
+        "select_state": "Select State",
+        "select_district": "Select District",
+        "select_taluka": "Select Taluka"
+    },
+    "farm_screen": {
+        "title": "Farm Details",
+        "subtitle": "Tell us about your farm",
+        "ownership": "Land Ownership",
+        "own": "Own Land",
+        "leased": "Leased Land",
+        "land_size": "Land Size",
+        "below_1_acre": "Less than 1 Acre",
+        "1_to_2_acres": "1-2 Acres",
+        "2_to_5_acres": "2-5 Acres",
+        "above_5_acres": "5+ Acres",
+        "crop": "Primary Crop",
+        "cotton": "Cotton",
+        "sugarcane": "Sugarcane",
+        "wheat": "Wheat",
+        "rice": "Rice",
+        "soybean": "Soybean",
+        "other": "Other",
+        "irrigation": "Irrigation Method",
+        "rainfed": "Rain-fed",
+        "well": "Well",
+        "canal": "Canal"
+    },
+    "credentials_screen": {
+        "title": "Your Details",
+        "subtitle": "Personal information & documents",
+        "category": "Category",
+        "general": "General",
+        "obc": "OBC",
+        "sc": "SC",
+        "st": "ST",
+        "gender": "Gender",
+        "male": "Male",
+        "female": "Female",
+        "other_gender": "Other",
+        "documents": "Documents You Have",
+        "aadhaar": "Aadhaar Card",
+        "bank_account": "Bank Account",
+        "ration_card": "Ration Card"
+    }
+}

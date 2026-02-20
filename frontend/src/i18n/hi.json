@@ -1,0 +1,59 @@
+{
+    "onboarding": {
+        "step": "चरण {{current}} / {{total}}",
+        "next": "आगे बढ़ें",
+        "back": "पीछे जाएं",
+        "submit": "जमा करें"
+    },
+    "language_screen": {
+        "title": "अपनी भाषा चुनें",
+        "subtitle": "अपनी पसंदीदा भाषा चुनें",
+        "location_title": "आपका स्थान",
+        "state": "राज्य",
+        "district": "जिला",
+        "taluka": "तालुका",
+        "select_state": "राज्य चुनें",
+        "select_district": "जिला चुनें",
+        "select_taluka": "तालुका चुनें"
+    },
+    "farm_screen": {
+        "title": "खेत की जानकारी",
+        "subtitle": "अपने खेत के बारे में बताएं",
+        "ownership": "भूमि स्वामित्व",
+        "own": "अपनी जमीन",
+        "leased": "पट्टे पर",
+        "land_size": "जमीन का आकार",
+        "below_1_acre": "1 एकड़ से कम",
+        "1_to_2_acres": "1-2 एकड़",
+        "2_to_5_acres": "2-5 एकड़",
+        "above_5_acres": "5+ एकड़",
+        "crop": "मुख्य फसल",
+        "cotton": "कपास",
+        "sugarcane": "गन्ना",
+        "wheat": "गेहूं",
+        "rice": "चावल",
+        "soybean": "सोयाबीन",
+        "other": "अन्य",
+        "irrigation": "सिंचाई का तरीका",
+        "rainfed": "वर्षा आधारित",
+        "well": "कुआं",
+        "canal": "नहर"
+    },
+    "credentials_screen": {
+        "title": "आपकी जानकारी",
+        "subtitle": "व्यक्तिगत जानकारी और दस्तावेज",
+        "category": "वर्ग",
+        "general": "सामान्य",
+        "obc": "ओबीसी",
+        "sc": "एससी",
+        "st": "एसटी",
+        "gender": "लिंग",
+        "male": "पुरुष",
+        "female": "महिला",
+        "other_gender": "अन्य",
+        "documents": "आपके पास कौन से दस्तावेज हैं",
+        "aadhaar": "आधार कार्ड",
+        "bank_account": "बैंक खाता",
+        "ration_card": "राशन कार्ड"
+    }
+}

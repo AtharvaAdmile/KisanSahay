@@ -1,0 +1,59 @@
+{
+    "onboarding": {
+        "step": "टप्पा {{current}} / {{total}}",
+        "next": "पुढे जा",
+        "back": "मागे जा",
+        "submit": "सबमिट करा"
+    },
+    "language_screen": {
+        "title": "तुमची भाषा निवडा",
+        "subtitle": "तुमची आवडती भाषा निवडा",
+        "location_title": "तुमचे ठिकाण",
+        "state": "राज्य",
+        "district": "जिल्हा",
+        "taluka": "तालुका",
+        "select_state": "राज्य निवडा",
+        "select_district": "जिल्हा निवडा",
+        "select_taluka": "तालुका निवडा"
+    },
+    "farm_screen": {
+        "title": "शेतीची माहिती",
+        "subtitle": "तुमच्या शेताबद्दल सांगा",
+        "ownership": "जमिनीचे मालकी हक्क",
+        "own": "स्वतःची जमीन",
+        "leased": "भाडेतत्त्वावर",
+        "land_size": "जमिनीचा आकार",
+        "below_1_acre": "१ एकरापेक्षा कमी",
+        "1_to_2_acres": "१-२ एकर",
+        "2_to_5_acres": "२-५ एकर",
+        "above_5_acres": "५+ एकर",
+        "crop": "मुख्य पीक",
+        "cotton": "कापूस",
+        "sugarcane": "ऊस",
+        "wheat": "गहू",
+        "rice": "तांदूळ",
+        "soybean": "सोयाबीन",
+        "other": "इतर",
+        "irrigation": "सिंचन पद्धत",
+        "rainfed": "पावसावर अवलंबून",
+        "well": "विहीर",
+        "canal": "कालवा"
+    },
+    "credentials_screen": {
+        "title": "तुमची माहिती",
+        "subtitle": "वैयक्तिक माहिती आणि कागदपत्रे",
+        "category": "प्रवर्ग",
+        "general": "सामान्य",
+        "obc": "ओबीसी",
+        "sc": "एससी",
+        "st": "एसटी",
+        "gender": "लिंग",
+        "male": "पुरुष",
+        "female": "स्त्री",
+        "other_gender": "इतर",
+        "documents": "तुमच्याकडे कोणती कागदपत्रे आहेत",
+        "aadhaar": "आधार कार्ड",
+        "bank_account": "बँक खाते",
+        "ration_card": "रेशन कार्ड"
+    }
+}
