@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { runAgentTask } from '../services/agentApi';
 
 export type Language = 'hi' | 'mr' | 'en';
 export type Category = 'general' | 'obc' | 'sc' | 'st' | null;
@@ -32,6 +33,12 @@ interface OnboardingState {
     activeSchemeContext: string | null;
     documents: Record<string, string | null>;
 
+    isAgentLoading: boolean;
+    agentResult: any;
+
+    // Secure Data Extracted from Documents
+    aadhaarNumber: string | null;
+
     // Actions
     setPersonalDetails: (name: string, dob: string, mobile: string, email: string) => void;
     setLanguage: (lang: Language) => void;
@@ -48,6 +55,8 @@ interface OnboardingState {
     resetOnboarding: () => void;
     setActiveSchemeContext: (ctx: string | null) => void;
     setDocument: (docType: string, uri: string | null) => void;
+    syncWithAgent: (prompt: string) => Promise<void>;
+    setAadhaarNumber: (num: string | null) => void;
 }
 
 const initialState = {
@@ -68,11 +77,14 @@ const initialState = {
     isComplete: false,
     activeSchemeContext: null as string | null,
     documents: {},
+    isAgentLoading: false,
+    agentResult: null,
+    aadhaarNumber: null,
 };
 
 export const useOnboardingStore = create<OnboardingState>()(
     persist(
-        (set) => ({
+        (set, get) => ({
             ...initialState,
 
             setPersonalDetails: (name, dob, mobile, email) =>
@@ -101,6 +113,38 @@ export const useOnboardingStore = create<OnboardingState>()(
                         [docType]: uri,
                     },
                 })),
+
+            setAadhaarNumber: (num) => set({ aadhaarNumber: num }),
+
+            syncWithAgent: async (prompt: string) => {
+                set({ isAgentLoading: true });
+                try {
+                    const state = get();
+
+                    const documents_available = [];
+                    if (state.hasAadhaar || state.documents?.aadhaar) documents_available.push('Aadhaar');
+                    if (state.hasBankAccount || state.documents?.bank) documents_available.push('Bank Account');
+                    if (state.documents?.ration) documents_available.push('Ration Card');
+                    if (state.documents?.land712) documents_available.push('Land Record 7/12');
+
+                    const profileData = {
+                        name: state.name,
+                        dob: state.dob,
+                        mobile: state.mobile,
+                        email: state.email,
+                        state: state.state,
+                        district: state.district,
+                        taluka: state.taluka,
+                        documents_available
+                    };
+
+                    const result = await runAgentTask(prompt, profileData);
+                    set({ agentResult: result, isAgentLoading: false });
+                } catch (error) {
+                    console.error("Agent sync failed", error);
+                    set({ isAgentLoading: false });
+                }
+            },
         }),
         {
             name: 'kisansahay-onboarding',

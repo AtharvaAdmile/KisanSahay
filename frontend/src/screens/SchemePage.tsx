@@ -9,7 +9,7 @@ interface SchemePageProps {
 }
 
 export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) => {
-    const { name, hasAadhaar, hasBankAccount, state, setActiveSchemeContext } = useOnboardingStore();
+    const { name, hasAadhaar, hasBankAccount, state, setActiveSchemeContext, syncWithAgent, isAgentLoading, agentResult } = useOnboardingStore();
 
     const [showEligibilityForm, setShowEligibilityForm] = useState(false);
 
@@ -19,19 +19,21 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
     const [crop, setCrop] = useState('');
     const [eligibilityResult, setEligibilityResult] = useState<'pending' | 'eligible' | 'not_eligible'>('pending');
 
-    const handleCheckEligibility = () => {
+    const handleCheckEligibility = async () => {
         if (!isCultivator || !hasLandDocs || crop.trim() === '') {
             Alert.alert("Form Incomplete", "Please fill in all details to check eligibility.");
             return;
         }
 
         // PMFBY Evaluation Logic
-        // To be eligible: must be cultivator, have land docs, have aadhaar, and have a bank account.
         if (isCultivator && hasLandDocs && hasAadhaar && hasBankAccount) {
             setEligibilityResult('eligible');
         } else {
             setEligibilityResult('not_eligible');
         }
+
+        // Background sync to Backend Agent processing profile eligibility
+        syncWithAgent("Check my eligibility for PMFBY based on my profile.").catch(err => console.error("Agent Request Error", err));
     };
 
     const handleCheckDocuments = () => {
@@ -210,6 +212,13 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
                                         <Text style={styles.resultDesc}>You must be a cultivator with valid land documents. Also ensure you have an Aadhaar and Bank Account mapped in your profile credentials.</Text>
                                     </>
                                 )}
+
+                                {isAgentLoading ? (
+                                    <Text style={[styles.resultDesc, { color: '#f57c00', marginTop: 8 }]}>Loading Backend Agent API verification...</Text>
+                                ) : agentResult ? (
+                                    <Text style={[styles.resultDesc, { color: '#2e7d32', marginTop: 8 }]}>Backend Agent Validation Successfully Finished!</Text>
+                                ) : null}
+
                                 <TouchableOpacity style={styles.closeBtn} onPress={() => { setShowEligibilityForm(false); setEligibilityResult('pending'); }}>
                                     <Text style={styles.closeBtnText}>Done</Text>
                                 </TouchableOpacity>

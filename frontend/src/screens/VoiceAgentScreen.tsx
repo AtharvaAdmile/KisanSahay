@@ -4,9 +4,19 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import OpenAI from 'openai';
-import { useOnboardingStore } from '../store/onboardingStore';
+import { useOnboardingStore, Language } from '../store/onboardingStore';
+import { chatWithRegistrationAgent } from '../services/agentApi';
 
 const { width, height } = Dimensions.get('window');
+
+// Localized translations for "Agent is working..."
+const workingTranslations: Record<Language, string> = {
+    'en': 'Sahayak is accessing PMFBY systems on your behalf...',
+    'hi': 'सहायक आपकी ओर से PMFBY सिस्टम एक्सेस कर रहा है...',
+    'mr': 'सहायक आपल्या वतीने PMFBY प्रणाली ऍक्सेस करत आहे...'
+};
+
+type AgentState = 'INITIAL' | 'LISTENING' | 'REASONING' | 'AGENT_WORKING' | 'SPEAKING';
 
 const openai = new OpenAI({
     apiKey: process.env.EXPO_PUBLIC_NVIDIA_API_KEY || '',
@@ -21,17 +31,17 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
     const breatheAnim = useRef(new Animated.Value(1)).current;
 
     const [recording, setRecording] = useState<Audio.Recording | null>(null);
-    const [isRecording, setIsRecording] = useState(false);
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [isPlaying, setIsPlaying] = useState(false);
+    const [agentState, setAgentState] = useState<AgentState>('INITIAL');
     const [sound, setSound] = useState<Audio.Sound | null>(null);
 
     const [transcript, setTranscript] = useState('');
     const [agentResponse, setAgentResponse] = useState('');
 
     // Multi-turn conversational state
-    const { activeSchemeContext } = useOnboardingStore();
+    const { activeSchemeContext, language, name, state, district, taluka, mobile, hasAadhaar, hasBankAccount, documents } = useOnboardingStore();
     const [conversationHistory, setConversationHistory] = useState<{ role: string, content: string }[]>([]);
+    const [backendSessionId, setBackendSessionId] = useState<string>(`session_${Date.now()}`);
+    const [lastBackendRequest, setLastBackendRequest] = useState<string | null>(null);
 
     useEffect(() => {
         // Ripple Animation 
@@ -139,11 +149,11 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
                 );
 
                 setSound(newSound);
-                setIsPlaying(true);
+                setAgentState('SPEAKING');
 
                 newSound.setOnPlaybackStatusUpdate((status) => {
                     if (status.isLoaded && status.didJustFinish) {
-                        setIsPlaying(false);
+                        setAgentState('INITIAL');
                     }
                 });
             }
@@ -153,9 +163,9 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
     };
 
     const stopPlayback = async () => {
-        if (sound && isPlaying) {
+        if (sound && agentState === 'SPEAKING') {
             await sound.stopAsync();
-            setIsPlaying(false);
+            setAgentState('INITIAL');
         }
     };
 
@@ -184,7 +194,7 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             if (sound) {
                 await sound.unloadAsync();
                 setSound(null);
-                setIsPlaying(false);
+                if (agentState === 'SPEAKING') setAgentState('INITIAL');
             }
             setTranscript('');
             setAgentResponse('');
@@ -199,18 +209,19 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
                 Audio.RecordingOptionsPresets.HIGH_QUALITY
             );
             setRecording(recording);
-            setIsRecording(true);
+            setAgentState('LISTENING');
             console.log('Recording started');
         } catch (err) {
             console.error('Failed to start recording', err);
+            setAgentState('INITIAL');
         }
     };
 
     const stopRecording = async () => {
         console.log('Stopping recording...');
         if (!recording) return;
-        setIsRecording(false);
-        setIsProcessing(true);
+
+        setAgentState('REASONING');
 
         try {
             await recording.stopAndUnloadAsync();
@@ -224,11 +235,11 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             if (uri) {
                 await processAudioFlow(uri);
             } else {
-                setIsProcessing(false);
+                setAgentState('INITIAL');
             }
         } catch (err) {
             console.error('Failed to stop recording', err);
-            setIsProcessing(false);
+            setAgentState('INITIAL');
         }
     };
 
@@ -269,50 +280,136 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             const transcribedText = sttData.transcript || "Hello, I need help.";
             setTranscript(transcribedText);
 
-            // 2. LLM with Nvidia
-            console.log('Starting LLM query...');
-            setAgentResponse('Thinking...');
-            let llmResult = '';
+            // If activeSchemeContext is PMFBY, enter the Reasoning Loop
+            if (activeSchemeContext === 'PMFBY') {
+                setAgentState('REASONING');
+                setAgentResponse('Evaluating internal logic...');
 
-            const newHistory = [...conversationHistory, { role: "user", content: transcribedText }];
+                const newHistory = [...conversationHistory, { role: "user", content: transcribedText }];
 
-            const completion = await openai.chat.completions.create({
-                model: "meta/llama-3.3-70b-instruct",
-                messages: newHistory as any,
-                temperature: 0.5,
-                top_p: 1,
-                max_tokens: 150,
-                stream: false
-            });
+                // 1) Llama 3 Reasoning Step: Is the answer sufficient?
+                const reasoningPrompt = `
+You are the reasoning coordinator for the PMFBY eligibility checker.
+Language to strictly reply in: ${language}
+The backend's previous request to the user was: "${lastBackendRequest || 'Initial greeting requesting cultivator status.'}"
+The user's response is: "${transcribedText}"
 
-            const rawLlm = completion.choices[0]?.message?.content || '{}';
-            try {
-                const cleanedRaw = rawLlm.replace(/```json/g, '').replace(/```/g, '').trim();
-                const parsed = JSON.parse(cleanedRaw);
-                llmResult = parsed.response || 'Sorry, I could not generate a response.';
-            } catch (e) {
-                console.warn('Failed to parse LLM JSON:', rawLlm);
-                llmResult = rawLlm;
+Task: Evaluate if the user's answer is providing the requested information sufficiently.
+If NO (the user gave gibberish, asked a different question, or didn't answer properly): 
+Reply directly to the user asking for clarification.
+If YES (the user answered clearly): 
+Output EXACTLY "BACKEND_READY". Do not output anything else.
+`;
+                const reasoningCompletion = await openai.chat.completions.create({
+                    model: "meta/llama-3.3-70b-instruct",
+                    messages: [
+                        { role: "system", content: "Don't use markdown styling." },
+                        ...newHistory,
+                        { role: "assistant", content: reasoningPrompt }
+                    ] as any,
+                    temperature: 0.1,
+                    max_tokens: 150,
+                });
+
+                const reasoningResult = reasoningCompletion.choices[0]?.message?.content?.trim() || '';
+
+                if (reasoningResult !== "BACKEND_READY" && !reasoningResult.includes("BACKEND_READY")) {
+                    // LLM decided to ask clarification. Don't ping backend.
+                    setAgentResponse(reasoningResult);
+                    setConversationHistory([...newHistory, { role: "assistant", content: reasoningResult }]);
+                    await playTTSString(reasoningResult);
+                    return;
+                }
+
+                // 2) Answer is sufficient -> Dispatch to Backend Agent
+                setAgentState('AGENT_WORKING');
+                setAgentResponse(workingTranslations[language] || workingTranslations['en']);
+
+                // Build robust profile document payload
+                const documents_available = [];
+                if (hasAadhaar || documents?.aadhaar) documents_available.push('Aadhaar');
+                if (hasBankAccount || documents?.bank) documents_available.push('Bank Account');
+                if (documents?.ration) documents_available.push('Ration Card');
+                if (documents?.land712) documents_available.push('Land Record 7/12');
+
+                const profileData = { name, state, district, taluka, mobile, documents_available };
+
+                try {
+                    const agentChatRes = await chatWithRegistrationAgent(backendSessionId, transcribedText, profileData);
+
+                    const backendStatus = agentChatRes.status;
+                    const backendMsg = agentChatRes.message || "Working on it.";
+
+                    if (backendStatus === 'requires_input') {
+                        setLastBackendRequest(backendMsg);
+
+                        let formattedSpeech = backendMsg;
+                        if (agentChatRes.options && agentChatRes.options.length > 0) {
+                            formattedSpeech += ` Options are: ${agentChatRes.options.join(', ')}`;
+                        }
+
+                        setAgentResponse(formattedSpeech);
+                        setConversationHistory([...newHistory, { role: "assistant", content: formattedSpeech }]);
+                        await playTTSString(formattedSpeech);
+
+                    } else if (backendStatus === 'ready_to_submit') {
+                        setLastBackendRequest(null);
+                        const confirmMsg = "I have filled all the required forms. " + backendMsg + " Ensure your details are correct. Should I final submit?";
+
+                        setAgentResponse(confirmMsg);
+                        setConversationHistory([...newHistory, { role: "assistant", content: confirmMsg }]);
+                        await playTTSString(confirmMsg);
+                    } else if (backendStatus === 'error') {
+                        setAgentResponse(`Backend error: ${backendMsg}`);
+                        await playTTSString(`There was an error: ${backendMsg}`);
+                    }
+
+                } catch (backendError) {
+                    console.error("Backend Chat Error:", backendError);
+                    setAgentResponse('The backend agent is currently unavailable. Please check server connection.');
+                    await playTTSString('Sorry, the automation agent is not responding.');
+                }
+
+            } else {
+                // Generic RAG LLM fallback
+                setAgentState('REASONING');
+                console.log('Starting LLM query...');
+                setAgentResponse('Thinking...');
+                let llmResult = '';
+
+                const newHistory = [...conversationHistory, { role: "user", content: transcribedText }];
+
+                const completion = await openai.chat.completions.create({
+                    model: "meta/llama-3.3-70b-instruct",
+                    messages: newHistory as any,
+                    temperature: 0.5,
+                    max_tokens: 150,
+                });
+
+                const rawLlm = completion.choices[0]?.message?.content || '{}';
+                try {
+                    const cleanedRaw = rawLlm.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const parsed = JSON.parse(cleanedRaw);
+                    llmResult = parsed.response || 'Sorry, I could not generate a response.';
+                } catch (e) {
+                    llmResult = rawLlm;
+                }
+
+                setAgentResponse(llmResult);
+                setConversationHistory([...newHistory, { role: "assistant", content: llmResult }]);
+                await playTTSString(llmResult);
             }
-
-            setAgentResponse(llmResult);
-
-            // Append assistant response to history
-            setConversationHistory([...newHistory, { role: "assistant", content: llmResult }]);
-
-            // 3. TTS with Sarvam AI
-            await playTTSString(llmResult);
 
         } catch (error) {
             console.error('Error in processing flow:', error);
             setAgentResponse('Sorry, an error occurred. Please try again.');
         } finally {
-            setIsProcessing(false);
+            if (agentState !== 'SPEAKING') setAgentState('INITIAL');
         }
     };
 
     const toggleRecording = () => {
-        if (isRecording) {
+        if (agentState === 'LISTENING') {
             stopRecording();
         } else {
             startRecording();
@@ -338,7 +435,7 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             <View style={styles.main}>
                 {/* Animated Orbs */}
                 <View style={styles.orbContainer}>
-                    {(isPlaying || isRecording || isProcessing) && (
+                    {(agentState === 'SPEAKING' || agentState === 'LISTENING' || agentState === 'REASONING' || agentState === 'AGENT_WORKING') && (
                         <>
                             <Animated.View
                                 style={[
@@ -357,8 +454,12 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
                     )}
 
                     <TouchableOpacity activeOpacity={0.8} onPress={stopPlayback} style={styles.centerOrbWrapper}>
-                        <Animated.View style={[styles.centerOrb, { transform: [{ scale: breatheAnim }] }, isRecording ? styles.centerOrbRecording : null]}>
-                            <MaterialIcons name="graphic-eq" size={48} color="#fff" />
+                        <Animated.View style={[styles.centerOrb, { transform: [{ scale: breatheAnim }] }, agentState === 'LISTENING' ? styles.centerOrbRecording : null]}>
+                            {agentState === 'AGENT_WORKING' ? (
+                                <ActivityIndicator size="large" color="#fff" />
+                            ) : (
+                                <MaterialIcons name="graphic-eq" size={48} color="#fff" />
+                            )}
                         </Animated.View>
                     </TouchableOpacity>
                 </View>
@@ -379,15 +480,15 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
                     <Text style={styles.spokenText}>
                         {transcript ? `"${transcript}"` : '"KCC loan ke liye kya documents chahiye?"'}
                     </Text>
-                    <TouchableOpacity style={[styles.micButton, isRecording && styles.micButtonActive]} onPress={toggleRecording}>
-                        {isProcessing ? (
+                    <TouchableOpacity style={[styles.micButton, agentState === 'LISTENING' && styles.micButtonActive]} onPress={toggleRecording} disabled={agentState === 'AGENT_WORKING'}>
+                        {agentState === 'REASONING' || agentState === 'AGENT_WORKING' ? (
                             <ActivityIndicator color="#fff" />
                         ) : (
-                            <MaterialIcons name={isRecording ? "stop" : "mic"} size={36} color="#fff" />
+                            <MaterialIcons name={agentState === 'LISTENING' ? "stop" : "mic"} size={36} color="#fff" />
                         )}
                     </TouchableOpacity>
                     <Text style={styles.listeningText}>
-                        {isRecording ? "LISTENING" : isProcessing ? "THINKING" : isPlaying ? "SPEAKING" : "TAP TO SPEAK"}
+                        {agentState === 'LISTENING' ? "LISTENING" : agentState === 'AGENT_WORKING' ? "BACKEND WORKING" : agentState === 'REASONING' ? "REASONING" : agentState === 'SPEAKING' ? "SPEAKING" : "TAP TO SPEAK"}
                     </Text>
                 </View>
             </View>
