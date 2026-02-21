@@ -13,10 +13,12 @@ import { useOnboardingStore, Category, Gender } from '../store/onboardingStore';
 
 interface CredentialsScreenProps {
     onBack: () => void;
+    onNext?: () => void;
 }
 
 export const CredentialsScreen: React.FC<CredentialsScreenProps> = ({
     onBack,
+    onNext,
 }) => {
     const { t } = useTranslation();
     const store = useOnboardingStore();
@@ -70,7 +72,7 @@ export const CredentialsScreen: React.FC<CredentialsScreenProps> = ({
             `Land: ${store.landOwnership} / ${store.landSize}\n` +
             `Crop: ${store.primaryCrop}\n` +
             `Category: ${store.category}`,
-            [{ text: 'OK' }]
+            [{ text: 'OK', onPress: onNext }]
         );
     };
 
