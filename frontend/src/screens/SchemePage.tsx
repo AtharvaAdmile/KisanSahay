@@ -12,6 +12,7 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
     const { name, hasAadhaar, hasBankAccount, state, setActiveSchemeContext, syncWithAgent, isAgentLoading, agentResult } = useOnboardingStore();
 
     const [showEligibilityForm, setShowEligibilityForm] = useState(false);
+    const [showActionMenu, setShowActionMenu] = useState(false);
 
     // Local form state for missing PMFBY check data
     const [isCultivator, setIsCultivator] = useState<boolean | null>(null);
@@ -67,9 +68,9 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
 
-                <View style={styles.card}>
+                <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
-                        <MaterialIcons name="star" size={20} color="#f57c00" />
+                        <MaterialIcons name="star" size={24} color="#f57c00" />
                         <Text style={styles.sectionTitle}>Benefits</Text>
                     </View>
                     <Text style={styles.paragraph}>• Financial Assistance for crop loss due to natural disasters, pests, and diseases.</Text>
@@ -79,9 +80,9 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
                     <Text style={styles.paragraph}>• Prevented Sowing compensation up to 25% if weather prevents planting.</Text>
                 </View>
 
-                <View style={styles.card}>
+                <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
-                        <MaterialIcons name="check-circle" size={20} color="#2e7d32" />
+                        <MaterialIcons name="check-circle" size={24} color="#2e7d32" />
                         <Text style={styles.sectionTitle}>Eligibility Criteria</Text>
                     </View>
                     <Text style={styles.paragraph}>• Open to all farmers, including tenant farmers and sharecroppers.</Text>
@@ -91,9 +92,9 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
                     <Text style={styles.paragraph}>• Application must be submitted within 2 weeks of the sowing season start.</Text>
                 </View>
 
-                <View style={styles.card}>
+                <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
-                        <MaterialIcons name="cancel" size={20} color="#d32f2f" />
+                        <MaterialIcons name="cancel" size={24} color="#d32f2f" />
                         <Text style={styles.sectionTitle}>Exclusions</Text>
                     </View>
                     <Text style={styles.paragraph}>• Crop losses in non-notified areas.</Text>
@@ -102,9 +103,9 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
                     <Text style={styles.paragraph}>• Cases where compensation was already received from another source.</Text>
                 </View>
 
-                <View style={styles.card}>
+                <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
-                        <MaterialIcons name="description" size={20} color="#1976d2" />
+                        <MaterialIcons name="description" size={24} color="#1976d2" />
                         <Text style={styles.sectionTitle}>Required Documents</Text>
                     </View>
                     <Text style={styles.paragraph}>• Aadhaar Card (mandatory) or other Identity Proof.</Text>
@@ -114,9 +115,9 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
                     <Text style={styles.paragraph}>• Sowing Certificate or declaration.</Text>
                 </View>
 
-                <View style={styles.card}>
+                <View style={styles.section}>
                     <View style={styles.sectionHeaderRow}>
-                        <MaterialIcons name="help" size={20} color="#607d8b" />
+                        <MaterialIcons name="help" size={24} color="#607d8b" />
                         <Text style={styles.sectionTitle}>FAQs</Text>
                     </View>
                     <Text style={styles.faqQ}>Q: Can a tenant farmer apply without land documents?</Text>
@@ -131,20 +132,48 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
 
             {/* Action Bar */}
             <View style={styles.actionBar}>
-                <TouchableOpacity style={[styles.actionButton, styles.checkDocsBtn]} onPress={handleCheckDocuments}>
-                    <MaterialIcons name="folder-shared" size={20} color="#2e7d32" />
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.actionButton, styles.shayakBtn]} onPress={handleAskShayak}>
-                    <MaterialIcons name="record-voice-over" size={20} color="#FFF" />
-                    <Text style={styles.shayakText}>Ask Shayak</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.actionButton, styles.checkEligBtn]} onPress={() => setShowEligibilityForm(true)}>
-                    <MaterialIcons name="fact-check" size={20} color="#FFF" />
-                    <Text style={styles.checkEligText}>Eligibility Check</Text>
+                <TouchableOpacity style={styles.takeActionBtn} onPress={() => setShowActionMenu(true)}>
+                    <Text style={styles.takeActionText}>Take Action</Text>
                 </TouchableOpacity>
             </View>
+
+            {/* Action Menu Modal */}
+            <Modal
+                visible={showActionMenu}
+                transparent={true}
+                animationType="slide"
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.actionMenuContent}>
+                        <View style={styles.actionMenuHeader}>
+                            <Text style={styles.modalTitle}>Choose Action</Text>
+                            <TouchableOpacity onPress={() => setShowActionMenu(false)}>
+                                <MaterialIcons name="close" size={28} color="#333" />
+                            </TouchableOpacity>
+                        </View>
+
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActionMenu(false); setShowEligibilityForm(true); }}>
+                            <MaterialIcons name="fact-check" size={28} color="#2e7d32" />
+                            <Text style={styles.menuItemText}>Eligibility Check</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActionMenu(false); handleCheckDocuments(); }}>
+                            <MaterialIcons name="folder-shared" size={28} color="#1976d2" />
+                            <Text style={styles.menuItemText}>Doc Check</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={styles.menuItem} onPress={() => { setShowActionMenu(false); handleAskShayak(); }}>
+                            <MaterialIcons name="record-voice-over" size={28} color="#f57c00" />
+                            <Text style={styles.menuItemText}>Ask Sahayak (for eligibility)</Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={[styles.menuItem, { borderBottomWidth: 0 }]} onPress={() => { setShowActionMenu(false); Alert.alert("Coming Soon", "Application via Sahayak is under development."); }}>
+                            <MaterialIcons name="assignment" size={28} color="#607d8b" />
+                            <Text style={styles.menuItemText}>Apply with Sahayak</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
 
             {/* Eligibility Form Modal */}
             <Modal
@@ -235,7 +264,7 @@ export const SchemePage: React.FC<SchemePageProps> = ({ onBack, onAskShayak }) =
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f5f5f5',
+        backgroundColor: '#FFF',
     },
     header: {
         backgroundColor: '#2e7d32',
@@ -267,30 +296,19 @@ const styles = StyleSheet.create({
     scrollContent: {
         padding: 16,
     },
-    card: {
-        backgroundColor: '#FFF',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 16,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+    section: {
+        marginBottom: 24,
     },
     sectionHeaderRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        paddingBottom: 8,
+        marginBottom: 16,
     },
     sectionTitle: {
-        fontSize: 16,
+        fontSize: 22,
         fontWeight: 'bold',
         color: '#333',
-        marginLeft: 8,
+        marginLeft: 12,
     },
     paragraph: {
         fontSize: 14,
@@ -330,38 +348,44 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
-    actionButton: {
+    takeActionBtn: {
         flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
+        backgroundColor: '#2e7d32',
         paddingVertical: 14,
         borderRadius: 8,
-        marginHorizontal: 4,
+        alignItems: 'center',
     },
-    checkDocsBtn: {
-        flex: 0.5,
-        backgroundColor: '#e8f5e9',
-        borderWidth: 1,
-        borderColor: '#2e7d32',
-    },
-    shayakBtn: {
-        backgroundColor: '#f57c00',
-    },
-    shayakText: {
+    takeActionText: {
         color: '#FFF',
         fontWeight: 'bold',
-        marginLeft: 6,
-        fontSize: 12,
+        fontSize: 16,
     },
-    checkEligBtn: {
-        backgroundColor: '#2e7d32',
+    actionMenuContent: {
+        backgroundColor: '#FFF',
+        borderTopLeftRadius: 20,
+        borderTopRightRadius: 20,
+        padding: 24,
+        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
+        width: '100%',
     },
-    checkEligText: {
-        color: '#FFF',
-        fontWeight: 'bold',
-        marginLeft: 6,
-        fontSize: 12,
+    actionMenuHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    menuItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    menuItemText: {
+        fontSize: 16,
+        color: '#333',
+        marginLeft: 16,
+        fontWeight: '500',
     },
     modalOverlay: {
         flex: 1,

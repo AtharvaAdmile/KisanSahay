@@ -163,30 +163,6 @@ export const EligibilityDashboard: React.FC<EligibilityDashboardProps> = ({
                         actionCta="Apply Now"
                     />
 
-                    {/* PM Fasal Bima Card */}
-                    <SchemeCard
-                        title="PM Fasal Bima"
-                        subtitle="Crop Insurance Scheme"
-                        emoji="☂️"
-                        emojiBg="#e8f0fe"
-                        amount="Coverage upto 100%"
-                        tags={['Natural Calamities', 'Pest Attack']}
-                        actionText="Deadline: 15 Days left"
-                        actionTextHighlight
-                        actionCta="Check Details"
-                    />
-
-                    {/* Soil Health Card */}
-                    <SchemeCard
-                        title="Soil Health Card"
-                        subtitle="Dept of Agriculture"
-                        emoji="🧪"
-                        emojiBg="#fdf3dc"
-                        amount="Free Soil Testing & Report"
-                        description="Improve your cotton yield by understanding your soil."
-                        actionText="Nearest Lab: 2.4km"
-                        actionCta="Book Slot"
-                    />
                 </View>
 
                 <View style={styles.bottomPadding} />
@@ -195,7 +171,6 @@ export const EligibilityDashboard: React.FC<EligibilityDashboardProps> = ({
             {/* Bottom Navigation */}
             <View style={styles.bottomNav}>
                 <NavItem icon="home" label="Home" isActive />
-                <NavItem icon="inventory" label="My Schemes" />
 
                 {/* Floating Mic Button */}
                 <View style={styles.floatingMicContainer}>
@@ -205,7 +180,6 @@ export const EligibilityDashboard: React.FC<EligibilityDashboardProps> = ({
                     </TouchableOpacity>
                 </View>
 
-                <NavItem icon="trending-up" label="Market Prices" />
                 <TouchableOpacity style={styles.navItem} onPress={onProfilePress}>
                     <MaterialIcons name="person" size={24} color="#9e9e9e" />
                     <Text style={styles.navItemText}>Profile</Text>

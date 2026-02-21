@@ -332,7 +332,7 @@ Output EXACTLY "BACKEND_READY". Do not output anything else.
                 if (documents?.ration) documents_available.push('Ration Card');
                 if (documents?.land712) documents_available.push('Land Record 7/12');
 
-                const profileData = { name, state, district, taluka, mobile, documents_available };
+                const profileData = { full_name: name, state, district, taluka, mobile, documents_available };
 
                 try {
                     const agentChatRes = await chatWithRegistrationAgent(backendSessionId, transcribedText, profileData);

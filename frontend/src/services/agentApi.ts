@@ -13,7 +13,7 @@ export const runAgentTask = async (prompt: string, profileData: any) => {
             },
             body: JSON.stringify({
                 prompt,
-                profileData
+                profile: profileData
             }),
         });
 
@@ -43,9 +43,9 @@ export const chatWithRegistrationAgent = async (sessionId: string, userInput: st
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                sessionId,
-                userInput,
-                profileData
+                session_id: sessionId,
+                message: userInput,
+                profile: profileData
             }),
         });
 

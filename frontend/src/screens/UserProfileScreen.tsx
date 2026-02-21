@@ -98,27 +98,14 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ onHome }) 
                     <MaterialIcons name="arrow-back" size={24} color="#8C705F" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>My Profile</Text>
-                <View style={styles.iconButtonRelative}>
-                    <MaterialIcons name="notifications" size={24} color="#8C705F" />
-                    <View style={styles.notificationDot} />
-                </View>
+
             </View>
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
                 {/* Profile Info */}
                 <View style={styles.profileSection}>
-                    <View style={styles.avatarWrapper}>
-                        <View style={styles.avatarContainer}>
-                            <Image
-                                source={{ uri: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCU4eoKaC6hbJ5STvfqRNXqa_nWBINKgiM44JbM885kkn1b1NuEmwkBIGj5zboD9-0eIv4MmEyFaofAEChmkqNwk9tvN2EZCv2qM7rmwW9oDfl9jyzKisNvOlsFPgeEOMRVnKO52t6vJ9jrJHtVGr8W88t-OzxrJZRWd7fZNAWs8gyMWmFjTeuBg4-PvyXinfoKDmyVeMbl-rJfdHa926dFauj5KwX5hDq-XwjxOC8kKlERkvb9ZJBNbfETBJjA6Zz4vOoGsIbxPawC' }}
-                                style={styles.avatar}
-                            />
-                        </View>
-                        <TouchableOpacity style={styles.editBadge}>
-                            <MaterialIcons name="edit" size={14} color="#FFF" />
-                        </TouchableOpacity>
-                    </View>
+
                     <Text style={styles.profileName}>{name || 'Farmer'}</Text>
                     <View style={styles.locationRow}>
                         <MaterialIcons name="location-on" size={18} color="#8C705F" />
@@ -151,16 +138,16 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ onHome }) 
                         </View>
                     </View>
 
-                    <View style={[styles.schemeCard, { borderColor: 'rgba(238, 140, 43, 0.3)' }]}>
-                        <View style={[styles.schemeIconBox, { backgroundColor: 'rgba(238, 140, 43, 0.1)' }]}>
-                            <MaterialIcons name="umbrella" size={24} color="#ee8c2b" />
+                    <View style={[styles.schemeCard, { borderColor: 'rgba(46, 125, 50, 0.3)' }]}>
+                        <View style={[styles.schemeIconBox, { backgroundColor: 'rgba(46, 125, 50, 0.1)' }]}>
+                            <MaterialIcons name="umbrella" size={24} color="#2e7d32" />
                         </View>
                         <View style={styles.schemeContent}>
                             <View style={styles.schemeTitleRow}>
                                 <Text style={styles.schemeTitle}>PMFBY Insurance</Text>
-                                <View style={[styles.statusBadge, { backgroundColor: 'rgba(238, 140, 43, 0.1)' }]}>
-                                    <MaterialIcons name="warning" size={12} color="#ee8c2b" style={{ marginRight: 2 }} />
-                                    <Text style={[styles.statusText, { color: '#ee8c2b' }]}>Action</Text>
+                                <View style={[styles.statusBadge, { backgroundColor: 'rgba(46, 125, 50, 0.1)' }]}>
+                                    <MaterialIcons name="warning" size={12} color="#2e7d32" style={{ marginRight: 2 }} />
+                                    <Text style={[styles.statusText, { color: '#2e7d32' }]}>Action</Text>
                                 </View>
                             </View>
                             <Text style={[styles.schemeSubtext, { marginBottom: 8 }]}>Sowing details for Cotton incomplete.</Text>
@@ -276,24 +263,14 @@ export const UserProfileScreen: React.FC<UserProfileScreenProps> = ({ onHome }) 
                     <MaterialIcons name="home" size={24} color="#9e9e9e" />
                     <Text style={styles.navText}>Home</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.navItem}>
-                    <MaterialIcons name="inventory" size={24} color="#9e9e9e" />
-                    <Text style={styles.navText}>My Schemes</Text>
-                </TouchableOpacity>
-
                 <View style={styles.scannerWrapper}>
                     <TouchableOpacity style={styles.scannerBtn}>
                         <MaterialIcons name="qr-code-scanner" size={28} color="#FFF" />
                     </TouchableOpacity>
                 </View>
-
                 <TouchableOpacity style={styles.navItem}>
-                    <MaterialIcons name="storefront" size={24} color="#9e9e9e" />
-                    <Text style={styles.navText}>Market</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.navItem}>
-                    <MaterialIcons name="person" size={24} color="#ee8c2b" />
-                    <Text style={[styles.navText, { color: '#ee8c2b', fontWeight: 'bold' }]}>Profile</Text>
+                    <MaterialIcons name="person" size={24} color="#2e7d32" />
+                    <Text style={[styles.navText, { color: '#2e7d32', fontWeight: 'bold' }]}>Profile</Text>
                 </TouchableOpacity>
             </View>
 
@@ -450,7 +427,7 @@ const styles = StyleSheet.create({
     viewAllText: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#ee8c2b',
+        color: '#2e7d32',
     },
     schemeCard: {
         flexDirection: 'row',
@@ -505,7 +482,7 @@ const styles = StyleSheet.create({
     },
     updateButton: {
         width: '100%',
-        backgroundColor: '#ee8c2b',
+        backgroundColor: '#2e7d32',
         borderRadius: 8,
         paddingVertical: 8,
         alignItems: 'center',
@@ -538,7 +515,7 @@ const styles = StyleSheet.create({
     },
     docCardWarning: {
         borderWidth: 2,
-        borderColor: 'rgba(238, 140, 43, 0.2)',
+        borderColor: 'rgba(46, 125, 50, 0.2)',
     },
     docIconWrapper: {
         position: 'relative',
@@ -568,7 +545,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     docWarningText: {
-        color: '#ee8c2b',
+        color: '#2e7d32',
         fontWeight: 'bold',
     },
     docUploadedText: {
@@ -635,7 +612,7 @@ const styles = StyleSheet.create({
         width: 56,
         height: 56,
         borderRadius: 28,
-        backgroundColor: '#ee8c2b',
+        backgroundColor: '#2e7d32',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 4,
@@ -700,7 +677,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
     },
     submitBtn: {
-        backgroundColor: '#ee8c2b',
+        backgroundColor: '#2e7d32',
         paddingVertical: 10,
         paddingHorizontal: 20,
         borderRadius: 8,
