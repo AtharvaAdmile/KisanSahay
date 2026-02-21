@@ -69,8 +69,8 @@ export const CredentialsScreen: React.FC<CredentialsScreenProps> = ({
             '✅ Profile Complete!',
             `Your profile has been saved locally and will be submitted when connected.\n\n` +
             `Location: ${store.taluka}, ${store.district}, ${store.state}\n` +
-            `Land: ${store.landOwnership} / ${store.landSize}\n` +
-            `Crop: ${store.primaryCrop}\n` +
+            `Land: 2 Acres\n` +
+            `Crop: Cotton\n` +
             `Category: ${store.category}`,
             [{ text: 'OK', onPress: onNext }]
         );

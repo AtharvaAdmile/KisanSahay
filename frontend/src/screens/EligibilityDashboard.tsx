@@ -2,7 +2,17 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, SafeAreaView, Platform, StatusBar, Animated } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
-export const EligibilityDashboard = () => {
+interface EligibilityDashboardProps {
+    onVoiceAgentPress: () => void;
+    onSchemePress: () => void;
+    onProfilePress: () => void;
+}
+
+export const EligibilityDashboard: React.FC<EligibilityDashboardProps> = ({
+    onVoiceAgentPress,
+    onSchemePress,
+    onProfilePress
+}) => {
     const pulseAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -68,12 +78,36 @@ export const EligibilityDashboard = () => {
                     </View>
                 </View>
 
-                {/* Eligibility Banner */}
+                {/* Eligibility Banner (PMFBY Specific) */}
                 <View style={styles.bannerContainer}>
+                    {/* Hidden Original 8 Govt Schemes Banner */}
+                    {false && (
+                        <View style={[styles.banner, { marginBottom: 16 }]}>
+                            <View style={styles.watermarkContainer}>
+                                <MaterialIcons name="agriculture" size={140} color="rgba(255,255,255,0.1)" />
+                            </View>
+
+                            <View style={styles.bannerContent}>
+                                <View style={styles.eligibilityTag}>
+                                    <View style={styles.starsIconBg}>
+                                        <MaterialIcons name="stars" size={16} color="#fff" />
+                                    </View>
+                                    <Text style={styles.eligibilityTagText}>ELIGIBILITY CHECK</Text>
+                                </View>
+                                <Text style={styles.bannerTitle}>You qualify for{'\n'}8 Govt. Schemes!</Text>
+                                <Text style={styles.bannerSubtext}>Based on your land size and crop details.</Text>
+                                <TouchableOpacity style={styles.viewAllButton}>
+                                    <Text style={styles.viewAllButtonText}>View All</Text>
+                                    <MaterialIcons name="arrow-forward" size={16} color="#2e7d32" />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* New PMFBY Banner */}
                     <View style={styles.banner}>
-                        {/* Watermark Icon */}
                         <View style={styles.watermarkContainer}>
-                            <MaterialIcons name="agriculture" size={140} color="rgba(255,255,255,0.1)" />
+                            <MaterialIcons name="security" size={140} color="rgba(255,255,255,0.1)" />
                         </View>
 
                         <View style={styles.bannerContent}>
@@ -83,10 +117,10 @@ export const EligibilityDashboard = () => {
                                 </View>
                                 <Text style={styles.eligibilityTagText}>ELIGIBILITY CHECK</Text>
                             </View>
-                            <Text style={styles.bannerTitle}>You qualify for{'\n'}8 Govt. Schemes!</Text>
-                            <Text style={styles.bannerSubtext}>Based on your land size and crop details.</Text>
-                            <TouchableOpacity style={styles.viewAllButton}>
-                                <Text style={styles.viewAllButtonText}>View All</Text>
+                            <Text style={styles.bannerTitle}>Pradhan Mantri Fasal Bima Yojna (PMFBY)</Text>
+                            <Text style={styles.bannerSubtext}>Ministry Of Agriculture and Farmers Welfare</Text>
+                            <TouchableOpacity style={styles.viewAllButton} onPress={onSchemePress}>
+                                <Text style={styles.viewAllButtonText}>View Details</Text>
                                 <MaterialIcons name="arrow-forward" size={16} color="#2e7d32" />
                             </TouchableOpacity>
                         </View>
@@ -166,13 +200,16 @@ export const EligibilityDashboard = () => {
                 {/* Floating Mic Button */}
                 <View style={styles.floatingMicContainer}>
                     <Animated.View style={[styles.micPulse, { transform: [{ scale: pulseScale }], opacity: pulseOpacity }]} />
-                    <TouchableOpacity style={styles.micButton}>
+                    <TouchableOpacity style={styles.micButton} onPress={onVoiceAgentPress}>
                         <MaterialIcons name="mic" size={32} color="#fff" />
                     </TouchableOpacity>
                 </View>
 
                 <NavItem icon="trending-up" label="Market Prices" />
-                <NavItem icon="help-outline" label="Help" />
+                <TouchableOpacity style={styles.navItem} onPress={onProfilePress}>
+                    <MaterialIcons name="person" size={24} color="#9e9e9e" />
+                    <Text style={styles.navItemText}>Profile</Text>
+                </TouchableOpacity>
             </View>
         </SafeAreaView>
     );
@@ -222,7 +259,7 @@ const SchemeCard = ({ title, subtitle, emoji, emojiBg, isVerified, amount, amoun
 
             {progress !== undefined && (
                 <View style={styles.progressTrack}>
-                    <View style={[styles.progressBar, { width: `${progress}%` }]} />
+                    <View style={[styles.progressBar, { width: `${progress}%` as any }]} />
                 </View>
             )}
 

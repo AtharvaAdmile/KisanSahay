@@ -4,13 +4,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import OpenAI from 'openai';
+import { useOnboardingStore } from '../store/onboardingStore';
 
 const { width, height } = Dimensions.get('window');
 
 const openai = new OpenAI({
     apiKey: process.env.EXPO_PUBLIC_NVIDIA_API_KEY || '',
     baseURL: 'https://integrate.api.nvidia.com/v1',
-    dangerouslyAllowBrowser: true // required for RN
+    dangerouslyAllowBrowser: true
 });
 
 const SARVAM_API_KEY = process.env.EXPO_PUBLIC_SARVAM_API_KEY || '';
@@ -28,8 +29,12 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
     const [transcript, setTranscript] = useState('');
     const [agentResponse, setAgentResponse] = useState('');
 
+    // Multi-turn conversational state
+    const { activeSchemeContext } = useOnboardingStore();
+    const [conversationHistory, setConversationHistory] = useState<{ role: string, content: string }[]>([]);
+
     useEffect(() => {
-        // Ripple Animation (Scaling and fading)
+        // Ripple Animation 
         Animated.loop(
             Animated.timing(rippleAnim, {
                 toValue: 1,
@@ -38,7 +43,7 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             })
         ).start();
 
-        // Breathing Animation (Slight scaling up and down)
+        // Breathing Animation 
         Animated.loop(
             Animated.sequence([
                 Animated.timing(breatheAnim, {
@@ -68,6 +73,91 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             }
         };
     }, [rippleAnim, breatheAnim, sound]);
+
+    useEffect(() => {
+        // PMFBY Auto-Initialization
+        if (activeSchemeContext === 'PMFBY' && conversationHistory.length === 0) {
+            const initialGreeting = "Welcome to the PMFBY eligibility check! Let's find out if you qualify for crop insurance. First, are you a cultivator or sharecropper on the land you wish to insure?";
+            setAgentResponse(initialGreeting);
+            setConversationHistory([
+                { role: "system", content: "You are the official PMFBY (Pradhan Mantri Fasal Bima Yojna) eligibility checker assistant. Your job is to interactively determine if the farmer qualifies for PMFBY. Ask them questions one by one based on this criteria: 1) Are they a cultivator/sharecropper? 2) Do they have a valid land ownership certificate or tenancy agreement? 3) Which crop are they insuring? If they answer yes to 1 and 2, and provide a crop, tell them they are eligible. If they answer no to either 1 or 2, tell them they are not eligible yet. Always reply in exactly the same language the user speaks. DO NOT output markdown. Return a plain JSON object with a single key 'response'." },
+                { role: "assistant", content: initialGreeting }
+            ]);
+
+            // Play initial greeting
+            playTTSString(initialGreeting);
+        } else if (conversationHistory.length === 0) {
+            // Generic Context
+            setConversationHistory([
+                { "role": "system", "content": "You are a helpful agricultural assistant. Directly answer the user's query in the exact same language they used. Do not include any internal monologues, thoughts, or markdown formatting. You MUST return strictly a JSON object with a single key 'response' containing your text." }
+            ]);
+        }
+    }, [activeSchemeContext]);
+
+    const playTTSString = async (text: string) => {
+        try {
+            console.log('Starting TTS stream...');
+            const safeText = text.substring(0, 500);
+
+            const ttsResponse = await fetch("https://api.sarvam.ai/text-to-speech", {
+                method: "POST",
+                headers: {
+                    "api-subscription-key": SARVAM_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    inputs: [safeText],
+                    target_language_code: "hi-IN",
+                    speaker: "ritu",
+                    pace: 1.2,
+                    speech_sample_rate: 8000,
+                    enable_preprocessing: true,
+                    model: "bulbul:v3"
+                })
+            });
+
+            if (!ttsResponse.ok) {
+                const errText = await ttsResponse.text();
+                throw new Error(`TTS HTTP error! status: ${ttsResponse.status} - ${errText}`);
+            }
+
+            const ttsData = await ttsResponse.json();
+            if (ttsData.audios && ttsData.audios.length > 0) {
+                const base64Audio = ttsData.audios[0];
+                let fileUri = '';
+
+                if (Platform.OS === 'web') {
+                    fileUri = 'data:audio/wav;base64,' + base64Audio;
+                } else {
+                    fileUri = FileSystem.documentDirectory + 'response.wav';
+                    await FileSystem.writeAsStringAsync(fileUri, base64Audio, { encoding: 'base64' as any });
+                }
+
+                const { sound: newSound } = await Audio.Sound.createAsync(
+                    { uri: fileUri },
+                    { shouldPlay: true }
+                );
+
+                setSound(newSound);
+                setIsPlaying(true);
+
+                newSound.setOnPlaybackStatusUpdate((status) => {
+                    if (status.isLoaded && status.didJustFinish) {
+                        setIsPlaying(false);
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error in TTS:', error);
+        }
+    };
+
+    const stopPlayback = async () => {
+        if (sound && isPlaying) {
+            await sound.stopAsync();
+            setIsPlaying(false);
+        }
+    };
 
     const rippleScale1 = rippleAnim.interpolate({
         inputRange: [0, 1],
@@ -148,22 +238,21 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             console.log('Starting STT...');
             setTranscript('Listening... transcribing...');
 
-            // Prepare form data. On Web, `uri` is a blob URL, so we must convert to a real Blob/File.
             const formData = new FormData();
             if (Platform.OS === 'web') {
                 const res = await fetch(uri);
                 const blob = await res.blob();
-                formData.append('file', blob, 'audio.webm'); // Web usually records webm
+                formData.append('file', blob, 'audio.webm');
             } else {
                 formData.append('file', {
                     uri,
                     name: 'audio.m4a',
-                    type: 'audio/x-m4a' // FIXED: Sarvam strict MIME checking
+                    type: 'audio/x-m4a'
                 } as any);
             }
             formData.append('model', 'saaras:v3');
 
-            const sttResponse = await fetch('https://api.sarvam.ai/speech-to-text-translate', {
+            const sttResponse = await fetch('https://api.sarvam.ai/speech-to-text', {
                 method: 'POST',
                 headers: {
                     'api-subscription-key': SARVAM_API_KEY,
@@ -177,8 +266,7 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             }
 
             const sttData = await sttResponse.json();
-            console.log('STT Response:', sttData);
-            const transcribedText = sttData.transcript || "Hello, I need help."; // Fallback if format is different
+            const transcribedText = sttData.transcript || "Hello, I need help.";
             setTranscript(transcribedText);
 
             // 2. LLM with Nvidia
@@ -186,81 +274,34 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             setAgentResponse('Thinking...');
             let llmResult = '';
 
+            const newHistory = [...conversationHistory, { role: "user", content: transcribedText }];
+
             const completion = await openai.chat.completions.create({
-                model: "sarvamai/sarvam-m",
-                messages: [
-                    { "role": "system", "content": "You are a helpful assistant. Keep your answer strictly under 450 characters." },
-                    { "role": "user", "content": transcribedText }
-                ],
+                model: "meta/llama-3.3-70b-instruct",
+                messages: newHistory as any,
                 temperature: 0.5,
                 top_p: 1,
                 max_tokens: 150,
                 stream: false
             });
 
-            llmResult = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+            const rawLlm = completion.choices[0]?.message?.content || '{}';
+            try {
+                const cleanedRaw = rawLlm.replace(/```json/g, '').replace(/```/g, '').trim();
+                const parsed = JSON.parse(cleanedRaw);
+                llmResult = parsed.response || 'Sorry, I could not generate a response.';
+            } catch (e) {
+                console.warn('Failed to parse LLM JSON:', rawLlm);
+                llmResult = rawLlm;
+            }
+
             setAgentResponse(llmResult);
 
+            // Append assistant response to history
+            setConversationHistory([...newHistory, { role: "assistant", content: llmResult }]);
+
             // 3. TTS with Sarvam AI
-            console.log('Starting TTS stream...');
-
-            // Sarvam requires inputs <= 500 chars
-            const safeLlmResult = llmResult.substring(0, 500);
-
-            const ttsResponse = await fetch("https://api.sarvam.ai/text-to-speech", {
-                method: "POST",
-                headers: {
-                    "api-subscription-key": SARVAM_API_KEY,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    inputs: [safeLlmResult],
-                    target_language_code: "hi-IN",
-                    speaker: "shubh",
-                    pace: 1.0,
-                    speech_sample_rate: 8000,
-                    enable_preprocessing: true,
-                    model: "bulbul:v3"
-                })
-            });
-
-            if (!ttsResponse.ok) {
-                const errText = await ttsResponse.text();
-                throw new Error(`TTS HTTP error! status: ${ttsResponse.status} - ${errText}`);
-            }
-
-            const ttsData = await ttsResponse.json();
-            if (ttsData.audios && ttsData.audios.length > 0) {
-                // The API returns base64 encoded audio
-                const base64Audio = ttsData.audios[0];
-                let fileUri = '';
-
-                if (Platform.OS === 'web') {
-                    // Play directly from base64 on Web browsers
-                    fileUri = 'data:audio/wav;base64,' + base64Audio;
-                } else {
-                    // Write to local file on iOS/Android
-                    fileUri = FileSystem.documentDirectory + 'response.wav';
-                    await FileSystem.writeAsStringAsync(fileUri, base64Audio, { encoding: 'base64' as any });
-                }
-
-                const { sound: newSound } = await Audio.Sound.createAsync(
-                    { uri: fileUri },
-                    { shouldPlay: true }
-                );
-
-                setSound(newSound);
-                setIsPlaying(true);
-
-                newSound.setOnPlaybackStatusUpdate((status) => {
-                    if (status.isLoaded && status.didJustFinish) {
-                        setIsPlaying(false);
-                    }
-                });
-
-            } else {
-                throw new Error('No audio returned from TTS');
-            }
+            await playTTSString(llmResult);
 
         } catch (error) {
             console.error('Error in processing flow:', error);
@@ -315,17 +356,21 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
                         </>
                     )}
 
-                    <Animated.View style={[styles.centerOrb, { transform: [{ scale: breatheAnim }] }, isRecording ? styles.centerOrbRecording : null]}>
-                        <MaterialIcons name="graphic-eq" size={48} color="#fff" />
-                    </Animated.View>
+                    <TouchableOpacity activeOpacity={0.8} onPress={stopPlayback} style={styles.centerOrbWrapper}>
+                        <Animated.View style={[styles.centerOrb, { transform: [{ scale: breatheAnim }] }, isRecording ? styles.centerOrbRecording : null]}>
+                            <MaterialIcons name="graphic-eq" size={48} color="#fff" />
+                        </Animated.View>
+                    </TouchableOpacity>
                 </View>
 
-                {/* Text Area */}
-                <View style={[styles.textContainer, { maxHeight: height * 0.3 }]}>
-                    <Text style={styles.instructionText}>
-                        {agentResponse || "To apply for KCC, you need your Aadhar card, land records, and a bank passbook."}
-                    </Text>
-                </View>
+                {/* Text Area (Hide if activeSchemeContext is active to avoid clutter, or maybe just render it anyway) */}
+                {!activeSchemeContext && (
+                    <View style={[styles.textContainer, { maxHeight: height * 0.3 }]}>
+                        <Text style={styles.instructionText}>
+                            {agentResponse || "To apply for KCC, you need your Aadhar card, land records, and a bank passbook."}
+                        </Text>
+                    </View>
+                )}
 
                 <View style={styles.spacer} />
 
@@ -388,144 +433,163 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 6,
         borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(15, 57, 15, 0.1)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     langTextActive: {
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#0f390f',
+        color: '#2e7d32',
     },
     langSeparator: {
         fontSize: 12,
-        color: 'rgba(15, 57, 15, 0.4)',
+        color: '#ccc',
         marginHorizontal: 4,
     },
     langTextInactive: {
         fontSize: 12,
-        fontWeight: '600',
-        color: 'rgba(15, 57, 15, 0.6)',
+        fontWeight: '500',
+        color: '#888',
     },
     main: {
         flex: 1,
-        alignItems: 'center',
+        zIndex: 10,
+        paddingHorizontal: 24,
     },
     orbContainer: {
-        height: height * 0.35,
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: 250,
+        marginVertical: 40,
+        position: 'relative',
+        zIndex: 2,
+    },
+    centerOrbWrapper: {
+        position: 'absolute',
+        zIndex: 5,
+    },
+    centerOrb: {
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        backgroundColor: '#ee8c2b',
         justifyContent: 'center',
         alignItems: 'center',
-        marginTop: height * 0.05,
+        shadowColor: '#ee8c2b',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.4,
+        shadowRadius: 16,
+        elevation: 10,
+        borderWidth: 4,
+        borderColor: 'rgba(255,255,255,0.8)',
+    },
+    centerOrbRecording: {
+        backgroundColor: '#ef4444',
+        shadowColor: '#ef4444',
     },
     ripple1: {
-        position: 'absolute',
-        width: 256,
-        height: 256,
-        borderRadius: 128,
-        backgroundColor: 'rgba(6, 249, 6, 0.1)',
-    },
-    ripple2: {
-        position: 'absolute',
-        width: 208,
-        height: 208,
-        borderRadius: 104,
-        backgroundColor: 'rgba(6, 249, 6, 0.2)',
-    },
-    ripple3: {
         position: 'absolute',
         width: 160,
         height: 160,
         borderRadius: 80,
-        backgroundColor: 'rgba(6, 249, 6, 0.3)',
+        backgroundColor: '#ee8c2b',
+        opacity: 0.3,
     },
-    centerOrb: {
-        width: 128,
-        height: 128,
-        borderRadius: 64,
-        backgroundColor: '#06f906',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#06f906',
-        shadowOffset: { width: 0, height: 0 },
-        shadowOpacity: 0.8,
-        shadowRadius: 20,
-        elevation: 10,
+    ripple2: {
+        position: 'absolute',
+        width: 220,
+        height: 220,
+        borderRadius: 110,
+        backgroundColor: '#ee8c2b',
+        opacity: 0.15,
     },
-    centerOrbRecording: {
-        backgroundColor: '#ff4444',
-        shadowColor: '#ff4444',
+    ripple3: {
+        position: 'absolute',
+        width: 280,
+        height: 280,
+        borderRadius: 140,
+        borderWidth: 1,
+        borderColor: 'rgba(238, 140, 43, 0.2)',
     },
     textContainer: {
-        paddingHorizontal: 32,
-        marginTop: 20,
-        alignItems: 'center',
-        zIndex: 10,
+        backgroundColor: '#fff',
+        borderRadius: 24,
+        padding: 24,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 12,
+        elevation: 4,
     },
     instructionText: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#000',
-        textAlign: 'center',
+        fontSize: 20,
         lineHeight: 32,
+        color: '#0f390f',
+        textAlign: 'center',
+        fontWeight: '600',
     },
     spacer: {
         flex: 1,
     },
     bottomSection: {
         alignItems: 'center',
-        paddingBottom: height * 0.1,
-        paddingHorizontal: 24,
-        width: '100%',
-        zIndex: 10,
+        paddingBottom: 40,
     },
     spokenText: {
-        fontSize: 18,
-        fontWeight: '500',
-        color: 'rgba(0,0,0,0.6)',
-        textAlign: 'center',
+        fontSize: 16,
+        color: '#666',
+        fontStyle: 'italic',
         marginBottom: 24,
+        textAlign: 'center',
+        paddingHorizontal: 20,
     },
     micButton: {
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: '#000',
+        backgroundColor: '#2e7d32',
         justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 10 },
+        shadowColor: '#2e7d32',
+        shadowOffset: { width: 0, height: 6 },
         shadowOpacity: 0.3,
-        shadowRadius: 15,
-        elevation: 10,
+        shadowRadius: 10,
+        elevation: 8,
+        borderWidth: 4,
+        borderColor: '#fff',
     },
     micButtonActive: {
-        backgroundColor: '#ff4444',
+        backgroundColor: '#ef4444',
+        shadowColor: '#ef4444',
     },
     listeningText: {
         marginTop: 16,
         fontSize: 12,
-        fontWeight: '600',
-        color: 'rgba(15, 57, 15, 0.4)',
+        fontWeight: 'bold',
+        color: '#888',
         letterSpacing: 2,
-        textTransform: 'uppercase',
     },
     bgDecorPrimary: {
         position: 'absolute',
-        top: '-10%',
-        left: '-10%',
-        width: '50%',
-        height: '50%',
-        backgroundColor: 'rgba(6, 249, 6, 0.05)',
-        borderRadius: 999,
-        zIndex: -1,
+        top: -100,
+        right: -100,
+        width: 300,
+        height: 300,
+        borderRadius: 150,
+        backgroundColor: 'rgba(238, 140, 43, 0.05)',
+        zIndex: 0,
     },
     bgDecorForest: {
         position: 'absolute',
-        bottom: '-10%',
-        right: '-10%',
-        width: '50%',
-        height: '50%',
-        backgroundColor: 'rgba(15, 57, 15, 0.05)',
-        borderRadius: 999,
-        zIndex: -1,
-    },
+        bottom: -150,
+        left: -100,
+        width: 350,
+        height: 350,
+        borderRadius: 175,
+        backgroundColor: 'rgba(46, 125, 50, 0.03)',
+        zIndex: 0,
+    }
 });

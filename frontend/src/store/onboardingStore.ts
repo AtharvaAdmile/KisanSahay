@@ -3,27 +3,23 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type Language = 'hi' | 'mr' | 'en';
-export type LandOwnership = 'own' | 'leased' | null;
-export type LandSize = 'below_1_acre' | '1_to_2_acres' | '2_to_5_acres' | 'above_5_acres' | null;
-export type CropType = 'cotton' | 'sugarcane' | 'wheat' | 'rice' | 'soybean' | 'other' | null;
-export type IrrigationMethod = 'rainfed' | 'well' | 'canal' | null;
 export type Category = 'general' | 'obc' | 'sc' | 'st' | null;
 export type Gender = 'male' | 'female' | 'other' | null;
 
 interface OnboardingState {
+    // Screen 0: Personal Details
+    name: string;
+    dob: string;
+    mobile: string;
+    email: string;
+
     // Screen 1: Language & Location
     language: Language;
     state: string;
     district: string;
     taluka: string;
 
-    // Screen 2: Farm Profile
-    landOwnership: LandOwnership;
-    landSize: LandSize;
-    primaryCrop: CropType;
-    irrigationMethod: IrrigationMethod;
-
-    // Screen 3: Credentials
+    // Screen 2: Credentials
     category: Category;
     gender: Gender;
     hasAadhaar: boolean;
@@ -33,16 +29,13 @@ interface OnboardingState {
     // Meta
     currentStep: number;
     isComplete: boolean;
+    activeSchemeContext: string | null;
+    documents: Record<string, string | null>;
 
     // Actions
+    setPersonalDetails: (name: string, dob: string, mobile: string, email: string) => void;
     setLanguage: (lang: Language) => void;
     setLocation: (state: string, district: string, taluka: string) => void;
-    setFarmDetails: (details: {
-        landOwnership?: LandOwnership;
-        landSize?: LandSize;
-        primaryCrop?: CropType;
-        irrigationMethod?: IrrigationMethod;
-    }) => void;
     setCredentials: (creds: {
         category?: Category;
         gender?: Gender;
@@ -53,17 +46,19 @@ interface OnboardingState {
     setCurrentStep: (step: number) => void;
     markComplete: () => void;
     resetOnboarding: () => void;
+    setActiveSchemeContext: (ctx: string | null) => void;
+    setDocument: (docType: string, uri: string | null) => void;
 }
 
 const initialState = {
+    name: '',
+    dob: '',
+    mobile: '',
+    email: '',
     language: 'hi' as Language,
     state: '',
     district: '',
     taluka: '',
-    landOwnership: null as LandOwnership,
-    landSize: null as LandSize,
-    primaryCrop: null as CropType,
-    irrigationMethod: null as IrrigationMethod,
     category: null as Category,
     gender: null as Gender,
     hasAadhaar: false,
@@ -71,6 +66,8 @@ const initialState = {
     hasRationCard: false,
     currentStep: 1,
     isComplete: false,
+    activeSchemeContext: null as string | null,
+    documents: {},
 };
 
 export const useOnboardingStore = create<OnboardingState>()(
@@ -78,13 +75,13 @@ export const useOnboardingStore = create<OnboardingState>()(
         (set) => ({
             ...initialState,
 
+            setPersonalDetails: (name, dob, mobile, email) =>
+                set({ name, dob, mobile, email }),
+
             setLanguage: (lang) => set({ language: lang }),
 
             setLocation: (state, district, taluka) =>
                 set({ state, district, taluka }),
-
-            setFarmDetails: (details) =>
-                set((prev) => ({ ...prev, ...details })),
 
             setCredentials: (creds) =>
                 set((prev) => ({ ...prev, ...creds })),
@@ -94,6 +91,16 @@ export const useOnboardingStore = create<OnboardingState>()(
             markComplete: () => set({ isComplete: true }),
 
             resetOnboarding: () => set(initialState),
+
+            setActiveSchemeContext: (ctx) => set({ activeSchemeContext: ctx }),
+
+            setDocument: (docType, uri) =>
+                set((state) => ({
+                    documents: {
+                        ...state.documents,
+                        [docType]: uri,
+                    },
+                })),
         }),
         {
             name: 'kisansahay-onboarding',
