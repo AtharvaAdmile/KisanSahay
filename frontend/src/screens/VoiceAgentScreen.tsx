@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated, SafeAreaView, Dimensions, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated, SafeAreaView, Dimensions, ActivityIndicator, Platform, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
 import * as FileSystem from 'expo-file-system/legacy';
 import OpenAI from 'openai';
 import { useOnboardingStore, Language } from '../store/onboardingStore';
 import { chatWithRegistrationAgent } from '../services/agentApi';
+import { SCHEMES_CONTENT } from '../data/schemesData';
 
 const { width, height } = Dimensions.get('window');
 
@@ -37,9 +38,9 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
     const [transcript, setTranscript] = useState('');
     const [agentResponse, setAgentResponse] = useState('');
 
-    // Multi-turn conversational state
     const { activeSchemeContext, language, name, state, district, taluka, mobile, hasAadhaar, hasBankAccount, documents } = useOnboardingStore();
     const [conversationHistory, setConversationHistory] = useState<{ role: string, content: string }[]>([]);
+    const [operationMode, setOperationMode] = useState<'general' | 'eligibility' | 'agentic' | 'scheme_search'>(activeSchemeContext === 'PMFBY' ? 'eligibility' : 'general');
     const [backendSessionId, setBackendSessionId] = useState<string>(`session_${Date.now()}`);
     const [lastBackendRequest, setLastBackendRequest] = useState<string | null>(null);
 
@@ -85,24 +86,51 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
     }, [rippleAnim, breatheAnim, sound]);
 
     useEffect(() => {
-        // PMFBY Auto-Initialization
-        if (activeSchemeContext === 'PMFBY' && conversationHistory.length === 0) {
-            const initialGreeting = "Welcome to the PMFBY eligibility check! Let's find out if you qualify for crop insurance. First, are you a cultivator or sharecropper on the land you wish to insure?";
+        if (operationMode === 'eligibility' && conversationHistory.length === 0) {
+            const initialGreeting = "Welcome to the eligibility check! Let's find out if you qualify. First, are you a cultivator or sharecropper on the land you wish to insure?";
             setAgentResponse(initialGreeting);
             setConversationHistory([
-                { role: "system", content: "You are the official PMFBY (Pradhan Mantri Fasal Bima Yojna) eligibility checker assistant. Your job is to interactively determine if the farmer qualifies for PMFBY. Ask them questions one by one based on this criteria: 1) Are they a cultivator/sharecropper? 2) Do they have a valid land ownership certificate or tenancy agreement? 3) Which crop are they insuring? If they answer yes to 1 and 2, and provide a crop, tell them they are eligible. If they answer no to either 1 or 2, tell them they are not eligible yet. Always reply in exactly the same language the user speaks. DO NOT output markdown. Return a plain JSON object with a single key 'response'." },
+                { role: "system", content: "You are an eligibility checker assistant. Your job is to interactively determine if the farmer qualifies. Ask them questions one by one based on this criteria: 1) Are they a cultivator/sharecropper? 2) Do they have a valid land ownership certificate or tenancy agreement? 3) Which crop are they insuring? If they answer yes to 1 and 2, and provide a crop, tell them they are eligible. If they answer no to either 1 or 2, tell them they are not eligible yet. Always reply in exactly the same language the user speaks. DO NOT output markdown. Return a plain JSON object with a single key 'response'." },
                 { role: "assistant", content: initialGreeting }
             ]);
-
-            // Play initial greeting
             playTTSString(initialGreeting);
-        } else if (conversationHistory.length === 0) {
-            // Generic Context
+        } else if (operationMode === 'agentic' && conversationHistory.length === 0) {
+            const initialGreeting = "I am ready to help you perform actions on the PMFBY portal. Please tell me what you need to do, like applying for insurance.";
+            setAgentResponse(initialGreeting);
             setConversationHistory([
-                { "role": "system", "content": "You are a helpful agricultural assistant. Directly answer the user's query in the exact same language they used. Do not include any internal monologues, thoughts, or markdown formatting. You MUST return strictly a JSON object with a single key 'response' containing your text." }
+                { role: "system", content: "You are the agentic assistant relaying information between the user and the PMFBY backend automation. Help the user in the exact same language they used." },
+                { role: "assistant", content: initialGreeting }
             ]);
+            playTTSString(initialGreeting);
+        } else if (operationMode === 'scheme_search' && conversationHistory.length === 0) {
+            const initialGreeting = "I can help you find schemes that you are eligible for. Tell me a bit about your situation, or what you are looking for.";
+            setAgentResponse(initialGreeting);
+            setConversationHistory([
+                { role: "system", content: `You are an expert scheme advisor. Answer the user's queries regarding government schemes in the language they used. You have access to the user's onboarded data: Name (${name}), State (${state}), District (${district}), Mobile (${mobile}). Also here are the available schemes:\n${SCHEMES_CONTENT}\nGive them a tailored response about what schemes might apply to them.` },
+                { role: "assistant", content: initialGreeting }
+            ]);
+            playTTSString(initialGreeting);
+        } else if (operationMode === 'general' && conversationHistory.length === 0) {
+            const initialGreeting = "Hi, I am Sahayak! How can I help you today?";
+            setAgentResponse(initialGreeting);
+            setConversationHistory([
+                {
+                    role: "system",
+                    content: `You are a helpful AI Assistant named Sahayak aimed at resolving doubts and issues for farmers and help them with schemes related queries. You have multiple modes of operations: 'general', 'eligibility', and 'agentic'.
+
+Analyze the user's query:
+- If they ask to check their eligibility for a scheme, output exactly and only: {"action": "SWITCH_ELIGIBILITY", "response": "Switching to Eligibility Check mode."}
+- If they ask about what schemes they are eligible for, what types of schemes exist, or ask for a list of available schemes, output exactly: {"action": "SWITCH_SCHEMES", "response": "Switching to Scheme Search mode."}
+- If they ask to apply for a scheme, register, or perform an action on a portal, FIRST evaluate if their request is specific. If they simply say "register", DO NOT switch yet. Output exactly: {"response": "Do you want to register for the crop insurance scheme, or register for a website account on pmfby.gov.in?"}. 
+- DO NOT hallucinate or make up insurance premium calculations yourself. If the user asks "how much is my premium" or "calculate my premium", you MUST switch to agentic mode to let the backend browser handle it.
+- If their intent is CLEAR (e.g. "register for the scheme", "register for account", "apply for insurance", "calculate premium", "how much is my premium"), output exactly: {"action": "SWITCH_AGENTIC", "intent": "<mapped_intent>", "response": "Switching to Agentic Mode. Now starting the process."}. The mapped_intent MUST be one of 'apply_insurance' or 'calculate_premium'.
+- Otherwise, provide a helpful answer to their query in the exact same language they used, within ~200 words. Output a JSON object: {"response": "<your helpful answer>"}. Do not use markdown.`
+                },
+                { role: "assistant", content: initialGreeting }
+            ]);
+            playTTSString(initialGreeting);
         }
-    }, [activeSchemeContext]);
+    }, [operationMode, conversationHistory.length, activeSchemeContext]);
 
     const playTTSString = async (text: string) => {
         try {
@@ -280,48 +308,10 @@ export const VoiceAgentScreen = ({ navigation }: any) => {
             const transcribedText = sttData.transcript || "Hello, I need help.";
             setTranscript(transcribedText);
 
-            // If activeSchemeContext is PMFBY, enter the Reasoning Loop
-            if (activeSchemeContext === 'PMFBY') {
-                setAgentState('REASONING');
-                setAgentResponse('Evaluating internal logic...');
+            const newHistory = [...conversationHistory, { role: "user", content: transcribedText }];
 
-                const newHistory = [...conversationHistory, { role: "user", content: transcribedText }];
-
-                // 1) Llama 3 Reasoning Step: Is the answer sufficient?
-                const reasoningPrompt = `
-You are the reasoning coordinator for the PMFBY eligibility checker.
-Language to strictly reply in: ${language}
-The backend's previous request to the user was: "${lastBackendRequest || 'Initial greeting requesting cultivator status.'}"
-The user's response is: "${transcribedText}"
-
-Task: Evaluate if the user's answer is providing the requested information sufficiently.
-If NO (the user gave gibberish, asked a different question, or didn't answer properly): 
-Reply directly to the user asking for clarification.
-If YES (the user answered clearly): 
-Output EXACTLY "BACKEND_READY". Do not output anything else.
-`;
-                const reasoningCompletion = await openai.chat.completions.create({
-                    model: "meta/llama-3.3-70b-instruct",
-                    messages: [
-                        { role: "system", content: "Don't use markdown styling." },
-                        ...newHistory,
-                        { role: "assistant", content: reasoningPrompt }
-                    ] as any,
-                    temperature: 0.1,
-                    max_tokens: 150,
-                });
-
-                const reasoningResult = reasoningCompletion.choices[0]?.message?.content?.trim() || '';
-
-                if (reasoningResult !== "BACKEND_READY" && !reasoningResult.includes("BACKEND_READY")) {
-                    // LLM decided to ask clarification. Don't ping backend.
-                    setAgentResponse(reasoningResult);
-                    setConversationHistory([...newHistory, { role: "assistant", content: reasoningResult }]);
-                    await playTTSString(reasoningResult);
-                    return;
-                }
-
-                // 2) Answer is sufficient -> Dispatch to Backend Agent
+            if (operationMode === 'agentic') {
+                // We're essentially a messenger in this mode. Just relay the transcribedText directly.
                 setAgentState('AGENT_WORKING');
                 setAgentResponse(workingTranslations[language] || workingTranslations['en']);
 
@@ -335,7 +325,7 @@ Output EXACTLY "BACKEND_READY". Do not output anything else.
                 const profileData = { full_name: name, state, district, taluka, mobile, documents_available };
 
                 try {
-                    const agentChatRes = await chatWithRegistrationAgent(backendSessionId, transcribedText, profileData);
+                    const agentChatRes = await chatWithRegistrationAgent(backendSessionId, transcribedText, transcribedText, profileData);
 
                     const backendStatus = agentChatRes.status;
                     const backendMsg = agentChatRes.message || "Working on it.";
@@ -370,26 +360,138 @@ Output EXACTLY "BACKEND_READY". Do not output anything else.
                     await playTTSString('Sorry, the automation agent is not responding.');
                 }
 
-            } else {
-                // Generic RAG LLM fallback
+            } else if (operationMode === 'eligibility') {
                 setAgentState('REASONING');
-                console.log('Starting LLM query...');
                 setAgentResponse('Thinking...');
                 let llmResult = '';
-
-                const newHistory = [...conversationHistory, { role: "user", content: transcribedText }];
 
                 const completion = await openai.chat.completions.create({
                     model: "meta/llama-3.3-70b-instruct",
                     messages: newHistory as any,
                     temperature: 0.5,
-                    max_tokens: 150,
+                    max_tokens: 300,
                 });
 
                 const rawLlm = completion.choices[0]?.message?.content || '{}';
+                console.log('\n[FRONTEND - ELIGIBILITY MODE] LLM Raw Response:\n', rawLlm, '\n');
                 try {
                     const cleanedRaw = rawLlm.replace(/```json/g, '').replace(/```/g, '').trim();
                     const parsed = JSON.parse(cleanedRaw);
+                    llmResult = parsed.response || 'Sorry, I could not generate a response.';
+                } catch (e) {
+                    llmResult = rawLlm;
+                }
+
+                setAgentResponse(llmResult);
+                setConversationHistory([...newHistory, { role: "assistant", content: llmResult }]);
+                await playTTSString(llmResult);
+
+            } else if (operationMode === 'scheme_search') {
+                setAgentState('REASONING');
+                setAgentResponse('Searching...');
+                let llmResult = '';
+
+                // Add an artificial 3 second delay to simulate searching
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                const completion = await openai.chat.completions.create({
+                    model: "meta/llama-3.3-70b-instruct",
+                    messages: newHistory as any,
+                    temperature: 0.5,
+                    max_tokens: 350,
+                });
+
+                const rawLlm = completion.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+                console.log('\n[FRONTEND - SCHEME SEARCH MODE] LLM Raw Response:\n', rawLlm, '\n');
+                llmResult = rawLlm;
+
+                setAgentResponse(llmResult);
+                setConversationHistory([...newHistory, { role: "assistant", content: llmResult }]);
+                await playTTSString(llmResult);
+
+            } else if (operationMode === 'general') {
+                setAgentState('REASONING');
+                setAgentResponse('Thinking...');
+                let llmResult = '';
+
+                const completion = await openai.chat.completions.create({
+                    model: "meta/llama-3.3-70b-instruct",
+                    messages: newHistory as any,
+                    temperature: 0.5,
+                    max_tokens: 300,
+                });
+
+                const rawLlm = completion.choices[0]?.message?.content || '{}';
+                console.log('\n[FRONTEND - GENERAL MODE] LLM Raw Response:\n', rawLlm, '\n');
+                try {
+                    const cleanedRaw = rawLlm.replace(/```json/g, '').replace(/```/g, '').trim();
+                    const parsed = JSON.parse(cleanedRaw);
+
+                    if (parsed.action === 'SWITCH_ELIGIBILITY') {
+                        setOperationMode('eligibility');
+                        setConversationHistory([]);
+                        return;
+                    } else if (parsed.action === 'SWITCH_SCHEMES') {
+                        setOperationMode('scheme_search');
+                        setConversationHistory([]);
+                        return;
+                    } else if (parsed.action === 'SWITCH_AGENTIC') {
+                        setOperationMode('agentic');
+
+                        if (parsed.intent) {
+                            setAgentResponse(parsed.response);
+                            playTTSString(parsed.response);
+
+                            const newSessionId = "session_" + Date.now();
+                            setBackendSessionId(newSessionId);
+                            setAgentState('AGENT_WORKING');
+
+                            setConversationHistory([
+                                { role: "system", content: "You are the agentic assistant relaying information between the user and the PMFBY backend automation. Help the user in the exact same language they used." },
+                                { role: "user", content: transcribedText || "Start" },
+                                { role: "assistant", content: parsed.response }
+                            ]);
+
+                            const documents_available = [];
+                            if (hasAadhaar || documents?.aadhaar) documents_available.push('Aadhaar');
+                            if (hasBankAccount || documents?.bank) documents_available.push('Bank Account');
+                            if (documents?.ration) documents_available.push('Ration Card');
+                            if (documents?.land712) documents_available.push('Land Record 7/12');
+
+                            const profileData = { full_name: name, state, district, taluka, mobile, documents_available };
+
+                            try {
+                                const response = await chatWithRegistrationAgent(
+                                    newSessionId,
+                                    null,
+                                    transcribedText || "User requests to start",
+                                    profileData,
+                                    parsed.intent
+                                );
+
+                                if (response.status === 'success') {
+                                    const reply = "Task completed successfully.";
+                                    setAgentResponse(reply);
+                                    playTTSString(reply);
+                                    setConversationHistory(prev => [...prev, { role: "assistant", content: reply }]);
+                                } else if (response.status === 'requires_input') {
+                                    setAgentResponse(response.question || '');
+                                    playTTSString(response.question || 'I need more information.');
+                                    setConversationHistory(prev => [...prev, { role: "assistant", content: response.question || '' }]);
+                                    setLastBackendRequest(response.question || '');
+                                }
+                                setAgentState('INITIAL');
+                            } catch (error) {
+                                console.error('Agent chat error:', error);
+                                setAgentResponse('Failed to communicate with automation backend.');
+                                setAgentState('INITIAL');
+                            }
+                        } else {
+                            setConversationHistory([]);
+                        }
+                        return;
+                    }
+
                     llmResult = parsed.response || 'Sorry, I could not generate a response.';
                 } catch (e) {
                     llmResult = rawLlm;
@@ -423,7 +525,12 @@ Output EXACTLY "BACKEND_READY". Do not output anything else.
                 <TouchableOpacity style={styles.iconButton} onPress={() => navigation?.goBack()}>
                     <MaterialIcons name="arrow-back" size={28} color="#0f390f" />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Sahayak Voice</Text>
+                <View style={{ alignItems: 'center' }}>
+                    <Text style={styles.headerTitle}>Sahayak Voice</Text>
+                    <Text style={styles.modeIndicator}>
+                        {operationMode === 'general' ? 'General Mode' : operationMode === 'eligibility' ? 'Eligibility Check' : operationMode === 'scheme_search' ? 'Scheme Search' : 'Agentic Mode'}
+                    </Text>
+                </View>
                 <View style={styles.languageToggle}>
                     <Text style={styles.langTextActive}>EN</Text>
                     <Text style={styles.langSeparator}>/</Text>
@@ -464,14 +571,17 @@ Output EXACTLY "BACKEND_READY". Do not output anything else.
                     </TouchableOpacity>
                 </View>
 
-                {/* Text Area (Hide if activeSchemeContext is active to avoid clutter, or maybe just render it anyway) */}
-                {!activeSchemeContext && (
-                    <View style={[styles.textContainer, { maxHeight: height * 0.3 }]}>
-                        <Text style={styles.instructionText}>
-                            {agentResponse || "To apply for KCC, you need your Aadhar card, land records, and a bank passbook."}
+                {/* Text Area (Always render to show status and responses) */}
+                <View style={[styles.textContainer, { maxHeight: height * 0.35 }]}>
+                    <ScrollView showsVerticalScrollIndicator={true} nestedScrollEnabled={true}>
+                        <Text style={[
+                            styles.instructionText,
+                            agentResponse.length > 150 ? { fontSize: 13, lineHeight: 22 } : {}
+                        ]}>
+                            {agentResponse || "Hi, how can I help you today?"}
                         </Text>
-                    </View>
-                )}
+                    </ScrollView>
+                </View>
 
                 <View style={styles.spacer} />
 
@@ -526,6 +636,12 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         color: '#0f390f',
+    },
+    modeIndicator: {
+        fontSize: 12,
+        color: '#2e7d32',
+        marginTop: 2,
+        fontWeight: '600',
     },
     languageToggle: {
         flexDirection: 'row',

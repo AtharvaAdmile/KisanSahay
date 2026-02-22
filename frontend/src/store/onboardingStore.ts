@@ -127,14 +127,18 @@ export const useOnboardingStore = create<OnboardingState>()(
                     if (state.documents?.ration) documents_available.push('Ration Card');
                     if (state.documents?.land712) documents_available.push('Land Record 7/12');
 
+                    // Map frontend field names to backend FarmerProfile model names
                     const profileData = {
-                        name: state.name,
-                        dob: state.dob,
+                        full_name: state.name,
                         mobile: state.mobile,
-                        email: state.email,
+                        age: state.dob ? String(new Date().getFullYear() - new Date(state.dob).getFullYear()) : undefined,
+                        gender: state.gender ? state.gender.charAt(0).toUpperCase() + state.gender.slice(1) : undefined,
+                        caste: state.category ? state.category.toUpperCase() : undefined,
+                        aadhaar: state.aadhaarNumber || undefined,
                         state: state.state,
                         district: state.district,
-                        taluka: state.taluka,
+                        sub_district: state.taluka,
+                        language: state.language,
                         documents_available
                     };
 

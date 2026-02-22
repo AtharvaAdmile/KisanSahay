@@ -29,7 +29,7 @@ export const runAgentTask = async (prompt: string, profileData: any) => {
     }
 };
 
-export const chatWithRegistrationAgent = async (sessionId: string, userInput: string | null, profileData: any) => {
+export const chatWithRegistrationAgent = async (sessionId: string, userInput: string | null, initialPrompt: string | null, profileData: any, forcedIntent: string | null = null) => {
     const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL;
 
     if (!backendUrl) {
@@ -45,7 +45,9 @@ export const chatWithRegistrationAgent = async (sessionId: string, userInput: st
             body: JSON.stringify({
                 session_id: sessionId,
                 message: userInput,
-                profile: profileData
+                prompt: initialPrompt,
+                profile: profileData,
+                forced_intent: forcedIntent
             }),
         });
 
