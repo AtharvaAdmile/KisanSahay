@@ -1,0 +1,97 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "KisanSahay Scheme Rules",
+    "description": "Schema for validating deterministic eligibility rules for government agricultural schemes",
+    "type": "object",
+    "required": [
+        "version",
+        "schemes"
+    ],
+    "properties": {
+        "version": {
+            "type": "string",
+            "description": "Version of the rules format"
+        },
+        "schemes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": [
+                    "scheme_id",
+                    "name",
+                    "conditions"
+                ],
+                "properties": {
+                    "scheme_id": {
+                        "type": "string",
+                        "description": "Unique identifier for the scheme"
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Scheme name in English"
+                    },
+                    "name_hi": {
+                        "type": "string",
+                        "description": "Scheme name in Hindi"
+                    },
+                    "name_mr": {
+                        "type": "string",
+                        "description": "Scheme name in Marathi"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "benefits": {
+                        "type": "string"
+                    },
+                    "conditions": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "field",
+                                "operator",
+                                "value"
+                            ],
+                            "properties": {
+                                "field": {
+                                    "type": "string",
+                                    "description": "Dot-notation path to the farmer profile field (e.g., farm.land_size, credentials.has_aadhaar)",
+                                    "enum": [
+                                        "language",
+                                        "location.state",
+                                        "location.district",
+                                        "location.taluka",
+                                        "farm.land_ownership",
+                                        "farm.land_size",
+                                        "farm.primary_crop",
+                                        "farm.irrigation_method",
+                                        "credentials.category",
+                                        "credentials.gender",
+                                        "credentials.has_aadhaar",
+                                        "credentials.has_bank_account",
+                                        "credentials.has_ration_card"
+                                    ]
+                                },
+                                "operator": {
+                                    "type": "string",
+                                    "enum": [
+                                        "eq",
+                                        "in",
+                                        "not_in",
+                                        "exists",
+                                        "gte"
+                                    ],
+                                    "description": "Comparison operator"
+                                },
+                                "value": {
+                                    "description": "Expected value or list of values"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,157 @@
+{
+    "version": "1.0",
+    "schemes": [
+        {
+            "scheme_id": "pm-kisan",
+            "name": "PM-KISAN",
+            "name_hi": "प्रधानमंत्री किसान सम्मान निधि",
+            "name_mr": "प्रधानमंत्री किसान सन्मान निधी",
+            "description": "Direct income support of ₹6,000 per year to all landholding farmer families",
+            "benefits": "₹6,000/year in 3 installments of ₹2,000 directly to bank account",
+            "conditions": [
+                {
+                    "field": "farm.land_ownership",
+                    "operator": "eq",
+                    "value": "own"
+                },
+                {
+                    "field": "credentials.has_aadhaar",
+                    "operator": "exists",
+                    "value": true
+                },
+                {
+                    "field": "credentials.has_bank_account",
+                    "operator": "exists",
+                    "value": true
+                }
+            ]
+        },
+        {
+            "scheme_id": "pmfby",
+            "name": "PMFBY - Pradhan Mantri Fasal Bima Yojana",
+            "name_hi": "प्रधानमंत्री फसल बीमा योजना",
+            "name_mr": "प्रधानमंत्री पीक विमा योजना",
+            "description": "Comprehensive crop insurance against natural calamities, pests, and diseases",
+            "benefits": "Insurance coverage for crop loss with minimal premium (1.5-5% of sum insured)",
+            "conditions": [
+                {
+                    "field": "credentials.has_aadhaar",
+                    "operator": "exists",
+                    "value": true
+                },
+                {
+                    "field": "credentials.has_bank_account",
+                    "operator": "exists",
+                    "value": true
+                },
+                {
+                    "field": "farm.primary_crop",
+                    "operator": "in",
+                    "value": [
+                        "cotton",
+                        "sugarcane",
+                        "wheat",
+                        "rice",
+                        "soybean"
+                    ]
+                }
+            ]
+        },
+        {
+            "scheme_id": "soil-health-card",
+            "name": "Soil Health Card Scheme",
+            "name_hi": "मृदा स्वास्थ्य कार्ड योजना",
+            "name_mr": "मृदा आरोग्य कार्ड योजना",
+            "description": "Provides soil health cards with crop-wise nutrient recommendations",
+            "benefits": "Free soil testing and personalized fertilizer recommendations",
+            "conditions": [
+                {
+                    "field": "farm.land_ownership",
+                    "operator": "in",
+                    "value": [
+                        "own",
+                        "leased"
+                    ]
+                },
+                {
+                    "field": "credentials.has_aadhaar",
+                    "operator": "exists",
+                    "value": true
+                }
+            ]
+        },
+        {
+            "scheme_id": "rkvy",
+            "name": "RKVY - Rashtriya Krishi Vikas Yojana",
+            "name_hi": "राष्ट्रीय कृषि विकास योजना",
+            "name_mr": "राष्ट्रीय कृषी विकास योजना",
+            "description": "Financial assistance for agricultural development and allied sectors",
+            "benefits": "Subsidies for farm mechanization, irrigation, and agri-infrastructure",
+            "conditions": [
+                {
+                    "field": "farm.land_ownership",
+                    "operator": "eq",
+                    "value": "own"
+                },
+                {
+                    "field": "farm.land_size",
+                    "operator": "in",
+                    "value": [
+                        "1_to_2_acres",
+                        "2_to_5_acres",
+                        "above_5_acres"
+                    ]
+                },
+                {
+                    "field": "credentials.has_aadhaar",
+                    "operator": "exists",
+                    "value": true
+                },
+                {
+                    "field": "credentials.has_bank_account",
+                    "operator": "exists",
+                    "value": true
+                }
+            ]
+        },
+        {
+            "scheme_id": "mahatma-phule-yojana",
+            "name": "Mahatma Jyotirao Phule Shetkari Sanman Yojana",
+            "name_hi": "महात्मा ज्योतिराव फुले शेतकरी सन्मान योजना",
+            "name_mr": "महात्मा ज्योतिराव फुले शेतकरी सन्मान योजना",
+            "description": "Maharashtra state scheme providing crop loan waiver for small and marginal farmers",
+            "benefits": "Crop loan waiver up to ₹2 lakh for eligible Maharashtra farmers",
+            "conditions": [
+                {
+                    "field": "location.state",
+                    "operator": "eq",
+                    "value": "Maharashtra"
+                },
+                {
+                    "field": "farm.land_ownership",
+                    "operator": "eq",
+                    "value": "own"
+                },
+                {
+                    "field": "farm.land_size",
+                    "operator": "in",
+                    "value": [
+                        "below_1_acre",
+                        "1_to_2_acres",
+                        "2_to_5_acres"
+                    ]
+                },
+                {
+                    "field": "credentials.has_aadhaar",
+                    "operator": "exists",
+                    "value": true
+                },
+                {
+                    "field": "credentials.has_bank_account",
+                    "operator": "exists",
+                    "value": true
+                }
+            ]
+        }
+    ]
+}
