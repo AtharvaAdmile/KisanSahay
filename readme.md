@@ -60,6 +60,7 @@ Splash (animated logo)
 - **Accessible**: 48dp+ touch targets, 16sp+ fonts, high-contrast earthy palette, icons + labels on all interactive elements
 - **Deterministic Eligibility**: JSON rules engine evaluates all 5 schemes client-side — works without internet
 - **Per-Scheme Detail**: Eligibility checklist, benefit amount, step-by-step application guide, document status
+- **Voice Agent**: Sarvam AI-powered voice assistant for scheme queries (VoiceAgentScreen)
 - **Profile Management**: View and edit any onboarding step from the profile screen; reset clears data but preserves language preference
 - **Semantic Search**: pgvector-powered scheme discovery (planned)
 
@@ -74,6 +75,7 @@ Splash (animated logo)
 | State | Zustand v5 + AsyncStorage |
 | i18n | react-i18next + i18next v25 |
 | Rules | JSON-based deterministic engine |
+| Voice | Sarvam AI voice agent |
 
 ## Screens
 
@@ -81,12 +83,17 @@ Splash (animated logo)
 |--------|-------------|
 | `SplashScreen` | Animated logo; routes to Welcome, resume onboarding, or Home based on store state |
 | `WelcomeScreen` | Hero band, language picker, feature highlights, eligibility CTA |
+| `PersonalDetailsScreen` | Name, date of birth, mobile, email |
 | `LanguageLocationScreen` | Language selector + cascading State → District → Taluka picker |
 | `FarmProfileScreen` | Land ownership, size, primary crop, irrigation method (icon cards) |
 | `CredentialsScreen` | Category, gender, document possession (BigToggle checkboxes) |
 | `HomeScreen` | Eligible count banner, scheme cards split by eligibility, profile link |
+| `EligibilityDashboard` | Full eligibility results with scheme breakdown |
 | `SchemeDetailScreen` | Colored header band, benefit amount, condition checklist, apply steps, docs |
-| `ProfileScreen` | Summary of all 3 onboarding sections with per-section Edit links |
+| `SchemePage` | Scheme listing and browsing |
+| `ProfileScreen` | Summary of all onboarding sections with per-section Edit links |
+| `UserProfileScreen` | Extended user profile view |
+| `VoiceAgentScreen` | Sarvam AI voice assistant for scheme queries |
 
 ## Schemes Covered
 
