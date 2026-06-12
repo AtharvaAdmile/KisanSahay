@@ -13,12 +13,11 @@ const resources = {
 
 i18n.use(initReactI18next).init({
     resources,
-    lng: 'hi', // Default to Hindi
+    lng: 'hi',
     fallbackLng: 'en',
     interpolation: {
         escapeValue: false,
     },
-    compatibilityJSON: 'v4',
 });
 
 export default i18n;

@@ -5,20 +5,19 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Alert,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { BigToggle } from '../components/BigToggle';
 import { useOnboardingStore, Category, Gender } from '../store/onboardingStore';
+import { RootStackParamList } from '../types/navigation';
 
-interface CredentialsScreenProps {
-    onBack: () => void;
-}
+type NavProp = NativeStackNavigationProp<RootStackParamList, 'OnboardingStep3'>;
 
-export const CredentialsScreen: React.FC<CredentialsScreenProps> = ({
-    onBack,
-}) => {
+export const CredentialsScreen: React.FC = () => {
     const { t } = useTranslation();
+    const navigation = useNavigation<NavProp>();
     const store = useOnboardingStore();
 
     const categoryOptions: { key: Category; icon: string; labelKey: string }[] = [
@@ -58,20 +57,11 @@ export const CredentialsScreen: React.FC<CredentialsScreenProps> = ({
         },
     ];
 
-    const isComplete = store.category && store.gender;
+    const isComplete = !!(store.category && store.gender);
 
     const handleSubmit = () => {
         store.markComplete();
-        // In production: queue for API submission
-        Alert.alert(
-            '✅ Profile Complete!',
-            `Your profile has been saved locally and will be submitted when connected.\n\n` +
-            `Location: ${store.taluka}, ${store.district}, ${store.state}\n` +
-            `Land: ${store.landOwnership} / ${store.landSize}\n` +
-            `Crop: ${store.primaryCrop}\n` +
-            `Category: ${store.category}`,
-            [{ text: 'OK' }]
-        );
+        navigation.reset({ index: 0, routes: [{ name: 'Home' }] });
     };
 
     return (
@@ -136,7 +126,7 @@ export const CredentialsScreen: React.FC<CredentialsScreenProps> = ({
             <View style={styles.navRow}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={onBack}
+                    onPress={() => navigation.goBack()}
                     accessibilityLabel={t('onboarding.back')}
                 >
                     <Text style={styles.backButtonText}>← {t('onboarding.back')}</Text>

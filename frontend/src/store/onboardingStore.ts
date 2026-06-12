@@ -33,6 +33,7 @@ interface OnboardingState {
     // Meta
     currentStep: number;
     isComplete: boolean;
+    hasSeenWelcome: boolean;
 
     // Actions
     setLanguage: (lang: Language) => void;
@@ -52,6 +53,7 @@ interface OnboardingState {
     }) => void;
     setCurrentStep: (step: number) => void;
     markComplete: () => void;
+    setHasSeenWelcome: () => void;
     resetOnboarding: () => void;
 }
 
@@ -71,12 +73,14 @@ const initialState = {
     hasRationCard: false,
     currentStep: 1,
     isComplete: false,
+    // hasSeenWelcome intentionally excluded — resetOnboarding should not clear it
 };
 
 export const useOnboardingStore = create<OnboardingState>()(
     persist(
         (set) => ({
             ...initialState,
+            hasSeenWelcome: false,
 
             setLanguage: (lang) => set({ language: lang }),
 
@@ -93,6 +97,9 @@ export const useOnboardingStore = create<OnboardingState>()(
 
             markComplete: () => set({ isComplete: true }),
 
+            setHasSeenWelcome: () => set({ hasSeenWelcome: true }),
+
+            // Does NOT reset hasSeenWelcome — returning users skip the welcome screen
             resetOnboarding: () => set(initialState),
         }),
         {

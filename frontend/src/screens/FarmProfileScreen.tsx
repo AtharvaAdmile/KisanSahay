@@ -6,6 +6,8 @@ import {
     ScrollView,
     TouchableOpacity,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { IconCard } from '../components/IconCard';
 import {
@@ -15,17 +17,13 @@ import {
     CropType,
     IrrigationMethod,
 } from '../store/onboardingStore';
+import { RootStackParamList } from '../types/navigation';
 
-interface FarmProfileScreenProps {
-    onNext: () => void;
-    onBack: () => void;
-}
+type NavProp = NativeStackNavigationProp<RootStackParamList, 'OnboardingStep2'>;
 
-export const FarmProfileScreen: React.FC<FarmProfileScreenProps> = ({
-    onNext,
-    onBack,
-}) => {
+export const FarmProfileScreen: React.FC = () => {
     const { t } = useTranslation();
+    const navigation = useNavigation<NavProp>();
     const store = useOnboardingStore();
 
     const ownershipOptions: { key: LandOwnership; icon: string; labelKey: string }[] = [
@@ -55,8 +53,9 @@ export const FarmProfileScreen: React.FC<FarmProfileScreenProps> = ({
         { key: 'canal', icon: '🚿', labelKey: 'farm_screen.canal' },
     ];
 
-    const isComplete =
-        store.landOwnership && store.landSize && store.primaryCrop && store.irrigationMethod;
+    const isComplete = !!(
+        store.landOwnership && store.landSize && store.primaryCrop && store.irrigationMethod
+    );
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -132,14 +131,14 @@ export const FarmProfileScreen: React.FC<FarmProfileScreenProps> = ({
             <View style={styles.navRow}>
                 <TouchableOpacity
                     style={styles.backButton}
-                    onPress={onBack}
+                    onPress={() => navigation.goBack()}
                     accessibilityLabel={t('onboarding.back')}
                 >
                     <Text style={styles.backButtonText}>← {t('onboarding.back')}</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                     style={[styles.nextButton, !isComplete && styles.nextButtonDisabled]}
-                    onPress={isComplete ? onNext : undefined}
+                    onPress={isComplete ? () => navigation.navigate('OnboardingStep3') : undefined}
                     disabled={!isComplete}
                     accessibilityLabel={t('onboarding.next')}
                 >

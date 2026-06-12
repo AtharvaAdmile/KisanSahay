@@ -24,8 +24,8 @@
         "leased": "Leased Land",
         "land_size": "Land Size",
         "below_1_acre": "Less than 1 Acre",
-        "1_to_2_acres": "1-2 Acres",
-        "2_to_5_acres": "2-5 Acres",
+        "1_to_2_acres": "1–2 Acres",
+        "2_to_5_acres": "2–5 Acres",
         "above_5_acres": "5+ Acres",
         "crop": "Primary Crop",
         "cotton": "Cotton",
@@ -55,5 +55,53 @@
         "aadhaar": "Aadhaar Card",
         "bank_account": "Bank Account",
         "ration_card": "Ration Card"
+    },
+    "welcome_screen": {
+        "title": "KisanSahay",
+        "tagline": "Your guide to government farm schemes",
+        "cta": "Check My Eligibility",
+        "feature_check": "Find out which schemes you qualify for",
+        "feature_schemes": "5 real government agricultural schemes",
+        "feature_offline": "Works offline — your data stays on your device"
+    },
+    "home_screen": {
+        "greeting": "Welcome, Farmer!",
+        "eligible_banner": "{{count}} of {{total}} Schemes Eligible",
+        "matched_heading": "Your Matched Schemes",
+        "other_heading": "Other Schemes",
+        "my_profile": "My Profile",
+        "no_results": "Complete your profile to see matched schemes."
+    },
+    "scheme_detail": {
+        "what_you_get": "What You Get",
+        "eligibility": "Your Eligibility",
+        "how_to_apply": "How to Apply",
+        "documents_needed": "Documents Needed",
+        "apply_now": "Apply Now",
+        "eligible_chip": "Eligible ✓",
+        "not_eligible_chip": "Not Eligible",
+        "ministry": "Ministry"
+    },
+    "profile_screen": {
+        "title": "My Profile",
+        "language_location": "Language & Location",
+        "farm_details": "Farm Details",
+        "credentials": "Documents & Details",
+        "edit": "Edit",
+        "check_again": "Check Eligibility Again",
+        "reset": "Reset All Data",
+        "reset_confirm": "This will clear all your profile data. Are you sure?",
+        "not_set": "Not set"
+    },
+    "eligibility": {
+        "need_own_land": "Own Land",
+        "need_any_land": "Land (Own or Leased)",
+        "need_land_size": "Land Size ≥ 1 Acre",
+        "need_land_below_5_acres": "Land < 5 Acres",
+        "need_crop_type": "Eligible Crop",
+        "need_aadhaar": "Aadhaar Card",
+        "need_bank": "Bank Account",
+        "need_ration": "Ration Card",
+        "need_maharashtra": "Maharashtra State"
     }
 }

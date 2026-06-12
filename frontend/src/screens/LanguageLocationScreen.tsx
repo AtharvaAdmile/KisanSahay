@@ -6,10 +6,15 @@ import {
     ScrollView,
     TouchableOpacity,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { BigToggle } from '../components/BigToggle';
 import { useOnboardingStore, Language } from '../store/onboardingStore';
+import { RootStackParamList } from '../types/navigation';
 import i18n from '../i18n';
+
+type NavProp = NativeStackNavigationProp<RootStackParamList, 'OnboardingStep1'>;
 
 // Sample location data — in production, load from API or local JSON
 const LOCATION_DATA: Record<string, Record<string, string[]>> = {
@@ -42,14 +47,9 @@ const LANGUAGES: { key: Language; label: string; flag: string }[] = [
     { key: 'en', label: 'English', flag: '🌐' },
 ];
 
-interface LanguageLocationScreenProps {
-    onNext: () => void;
-}
-
-export const LanguageLocationScreen: React.FC<LanguageLocationScreenProps> = ({
-    onNext,
-}) => {
+export const LanguageLocationScreen: React.FC = () => {
     const { t } = useTranslation();
+    const navigation = useNavigation<NavProp>();
     const store = useOnboardingStore();
 
     const [selectedState, setSelectedState] = useState(store.state);
@@ -84,7 +84,7 @@ export const LanguageLocationScreen: React.FC<LanguageLocationScreenProps> = ({
         store.setLocation(selectedState, selectedDistrict, taluka);
     };
 
-    const isComplete = selectedState && selectedDistrict && selectedTaluka;
+    const isComplete = !!(selectedState && selectedDistrict && selectedTaluka);
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -178,7 +178,7 @@ export const LanguageLocationScreen: React.FC<LanguageLocationScreenProps> = ({
             {/* Next Button */}
             <TouchableOpacity
                 style={[styles.nextButton, !isComplete && styles.nextButtonDisabled]}
-                onPress={isComplete ? onNext : undefined}
+                onPress={isComplete ? () => navigation.navigate('OnboardingStep2') : undefined}
                 disabled={!isComplete}
                 accessibilityLabel={t('onboarding.next')}
                 accessibilityState={{ disabled: !isComplete }}

@@ -24,8 +24,8 @@
         "leased": "पट्टे पर",
         "land_size": "जमीन का आकार",
         "below_1_acre": "1 एकड़ से कम",
-        "1_to_2_acres": "1-2 एकड़",
-        "2_to_5_acres": "2-5 एकड़",
+        "1_to_2_acres": "1–2 एकड़",
+        "2_to_5_acres": "2–5 एकड़",
         "above_5_acres": "5+ एकड़",
         "crop": "मुख्य फसल",
         "cotton": "कपास",
@@ -55,5 +55,53 @@
         "aadhaar": "आधार कार्ड",
         "bank_account": "बैंक खाता",
         "ration_card": "राशन कार्ड"
+    },
+    "welcome_screen": {
+        "title": "किसान सहाय",
+        "tagline": "सरकारी कृषि योजनाओं के लिए आपका मार्गदर्शक",
+        "cta": "मेरी पात्रता जांचें",
+        "feature_check": "जानें आप किन योजनाओं के लिए पात्र हैं",
+        "feature_schemes": "5 असली सरकारी कृषि योजनाएं",
+        "feature_offline": "ऑफलाइन काम करता है — डेटा आपके डिवाइस पर रहता है"
+    },
+    "home_screen": {
+        "greeting": "स्वागत है, किसान!",
+        "eligible_banner": "{{total}} में से {{count}} योजनाएं पात्र",
+        "matched_heading": "आपकी पात्र योजनाएं",
+        "other_heading": "अन्य योजनाएं",
+        "my_profile": "मेरी प्रोफ़ाइल",
+        "no_results": "योजनाएं देखने के लिए अपनी प्रोफ़ाइल पूरी करें।"
+    },
+    "scheme_detail": {
+        "what_you_get": "आपको क्या मिलेगा",
+        "eligibility": "आपकी पात्रता",
+        "how_to_apply": "आवेदन कैसे करें",
+        "documents_needed": "आवश्यक दस्तावेज",
+        "apply_now": "अभी आवेदन करें",
+        "eligible_chip": "पात्र ✓",
+        "not_eligible_chip": "अपात्र",
+        "ministry": "मंत्रालय"
+    },
+    "profile_screen": {
+        "title": "मेरी प्रोफ़ाइल",
+        "language_location": "भाषा और स्थान",
+        "farm_details": "खेत की जानकारी",
+        "credentials": "दस्तावेज और विवरण",
+        "edit": "संपादित करें",
+        "check_again": "पात्रता फिर जांचें",
+        "reset": "सब डेटा मिटाएं",
+        "reset_confirm": "आपकी सारी प्रोफ़ाइल जानकारी हट जाएगी। क्या आप सुनिश्चित हैं?",
+        "not_set": "नहीं भरा"
+    },
+    "eligibility": {
+        "need_own_land": "अपनी जमीन",
+        "need_any_land": "कोई भी जमीन (अपनी या पट्टे पर)",
+        "need_land_size": "जमीन ≥ 1 एकड़",
+        "need_land_below_5_acres": "जमीन < 5 एकड़",
+        "need_crop_type": "पात्र फसल",
+        "need_aadhaar": "आधार कार्ड",
+        "need_bank": "बैंक खाता",
+        "need_ration": "राशन कार्ड",
+        "need_maharashtra": "महाराष्ट्र राज्य"
     }
 }

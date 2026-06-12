@@ -1,6 +1,6 @@
 import './src/i18n';
-import { OnboardingNavigator } from './src/navigation/OnboardingNavigator';
+import { RootNavigator } from './src/navigation/RootNavigator';
 
 export default function App() {
-  return <OnboardingNavigator />;
+  return <RootNavigator />;
 }
